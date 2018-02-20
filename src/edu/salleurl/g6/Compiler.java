@@ -13,7 +13,7 @@ public class Compiler {
     private Alex alex;
 
     public Compiler() {
-        line = 0;
+        line = 1;
     }
 
     private void __handleLexInput() {

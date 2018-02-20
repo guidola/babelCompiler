@@ -25,6 +25,7 @@ public class Alex {
     private int state;
     private String actualLexem;
     private LexOutputGenerator log;
+    private boolean isTooLongErrorDispatched;
 
 
     public Alex(String filename) {
@@ -35,6 +36,7 @@ public class Alex {
     }
 
     public int nextChar(int line, char c) {
+
 
         if (line == -1 ) {
             log.close();
@@ -54,6 +56,7 @@ public class Alex {
                 } else if(c == '"') {
                     state = 0x02;
                     actualLexem = "";
+                    isTooLongErrorDispatched = false;
                     return STEP;
 
                 } else if (c == '*') {
@@ -107,12 +110,15 @@ public class Alex {
                     state = 0x00;
 
                 } else if(Character.toString(c).matches(re_Linejumps)) {
-                    log.writeError(ErrorFactory.error(ErrorTypes.LEX_UNTERMINTATED_STRING, line, c));
+                    log.writeError(ErrorFactory.error(ErrorTypes.LEX_UNTERMINATED_STRING, line, c));
                     state = 0x00;
 
                 } else if(actualLexem.length() < MAX_STR_LEN + 1) {
                     actualLexem = actualLexem + Character.toString(c);
 
+                } else if(!isTooLongErrorDispatched) {
+                    log.writeError(ErrorFactory.warning(line,"String is too long"));
+                    isTooLongErrorDispatched = true;
                 }
                 return STEP;
 
