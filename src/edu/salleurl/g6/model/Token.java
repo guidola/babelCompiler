@@ -26,4 +26,9 @@ public class Token {
     public void setLexem(String lexem) {
         this.lexem = lexem;
     }
+
+    @Override
+    public String toString() {
+        return "[" + type + "] " + lexem;
+    }
 }
