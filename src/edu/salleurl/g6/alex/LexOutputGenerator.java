@@ -54,7 +54,6 @@ public class LexOutputGenerator {
 
     public void writeToken(Token t) {
         lexFile.println(t.toString());
-        System.out.println(t.toString());
     }
 
     public void writeError(String e) {
