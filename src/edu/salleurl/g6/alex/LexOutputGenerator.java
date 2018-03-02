@@ -13,7 +13,7 @@ public class LexOutputGenerator {
     private PrintWriter errFile;
 
     public LexOutputGenerator(String filename) {
-        String fn = filename.split("\\.")[0];
+        String fn = filename.split("\\.bab")[0];
 
         initLexOutFile(fn);
         initErrOutFile(fn);
