@@ -1,0 +1,11 @@
+const NUM = 20 ;
+inici
+    n =0;
+    usuari = 0;
+    i=0;
+    mentre i < NUM  fer
+        llegir(usuari);
+        n = n + usuari;
+        i = i + 1;
+     fimentre
+fi

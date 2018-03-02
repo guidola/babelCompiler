@@ -1,0 +1,14 @@
+const NUM = 20 ;
+sencer n ;
+sencer i;
+
+inici
+    n =0;
+    i=0;
+    mentre i < NUM  fer
+        n = n + i;
+        i = i + 1;
+     fimentre;
+
+     escriure (n);
+fi

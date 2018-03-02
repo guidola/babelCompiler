@@ -1,8 +1,6 @@
 package edu.salleurl.g6;
 
 import edu.salleurl.g6.alex.Alex;
-import edu.salleurl.g6.alex.LexOutputGenerator;
-
 import java.io.*;
 
 public class Compiler {
@@ -32,7 +30,7 @@ public class Compiler {
 
                 switch(alex.nextChar(line, Character.toLowerCase(ch))) {
                     case Alex.STEP:
-                        if(Character.toString((char)r).equals(System.lineSeparator())){line++;}
+                        if(Character.toString((char)r).equals("\n")){line++;}
                         r = in.read();
                         break;
                 }

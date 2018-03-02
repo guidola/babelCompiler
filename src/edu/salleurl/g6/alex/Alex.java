@@ -10,7 +10,7 @@ public class Alex {
     public static final int STEP_AND_NEW_LINE   = 0x04;
 
     private static final String sre_relationalOperators = "[><!]";
-    private static final String sre_specialCharacters = "[;:.,()\\[\\]{}&]";
+    private static final String sre_specialCharacters = "[;:,()\\[\\]{}&]";
     private static final String sre_numbers = "[0-9]";
     private static final String sre_letters = "[a-z]";
     private static final String sre_simpleArithmeticOperator = "[+\\-]";
@@ -25,8 +25,6 @@ public class Alex {
     private int state;
     private String actualLexem;
     private LexOutputGenerator log;
-    private boolean isTooLongErrorDispatched;
-
 
     public Alex(String filename) {
         state = 0x00;
@@ -36,7 +34,6 @@ public class Alex {
     }
 
     public int nextChar(int line, char c) {
-
 
         if (line == -1 ) {
             log.close();
@@ -56,7 +53,6 @@ public class Alex {
                 } else if(c == '"') {
                     state = 0x02;
                     actualLexem = "";
-                    isTooLongErrorDispatched = false;
                     return STEP;
 
                 } else if (c == '*') {
@@ -108,17 +104,13 @@ public class Alex {
             case 0x02:
                 if(c == '"') {
                     state = 0x00;
+                    log.writeToken(new Token(TokenType.STRING, actualLexem));
 
                 } else if(Character.toString(c).matches(re_Linejumps)) {
                     log.writeError(ErrorFactory.error(ErrorTypes.LEX_UNTERMINATED_STRING, line, c));
                     state = 0x00;
-
-                } else if(actualLexem.length() < MAX_STR_LEN + 1) {
+                } else {
                     actualLexem = actualLexem + Character.toString(c);
-
-                } else if(!isTooLongErrorDispatched) {
-                    log.writeError(ErrorFactory.warning(line,"String is too long"));
-                    isTooLongErrorDispatched = true;
                 }
                 return STEP;
 
@@ -155,7 +147,13 @@ public class Alex {
             case 0x06:
                 if(!Character.toString(c).matches(re_validIdChars)) {
                     state = 0x00;
-                    log.writeToken(ReservedWordsDictionary.getInstance().check(actualLexem));
+                    if(actualLexem.length() <= MAX_STR_LEN){
+                        log.writeToken(ReservedWordsDictionary.getInstance().check(actualLexem));
+                    }else{
+                        log.writeError(ErrorFactory.warning(line,"Identifier is too long"));
+                        log.writeToken(ReservedWordsDictionary.getInstance().check(actualLexem.substring(0, MAX_STR_LEN)));
+                    }
+
                     return STAY;
                 }
                 actualLexem = actualLexem + Character.toString(c);
