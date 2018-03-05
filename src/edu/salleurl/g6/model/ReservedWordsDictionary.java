@@ -7,7 +7,7 @@ public class ReservedWordsDictionary {
     private static HashMap<String, Token> reservedWords;
     private static ReservedWordsDictionary dict;
 
-    private ReservedWordsDictionary() {
+    private ReservedWordsDictionary(){
         super();
         reservedWords = new HashMap<>();
 

@@ -9,7 +9,7 @@ public interface SpecialChars
     String PARENTHESIS_OPEN = "(";
     String PARENTHESIS_CLOSE = ")";
     String SQUARE_BRACKETS_OPEN = "[";
-    String SQUARE_BRACKETS_CLOSE = "[";
+    String SQUARE_BRACKETS_CLOSE = "]";
     String BRACKETS_OPEN = "{";
     String BRACKETS_CLOSE = "}";
     String AMPERSAND = "&";

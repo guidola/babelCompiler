@@ -1,14 +1,105 @@
-const NUM = 20 ;
-sencer n ;
-sencer i;
+& Inici fi 
+coNst var 
+seNceR   LOgic
+ 
+ %
 
-inici
-    n =0;
-    i=0;
-    mentre i < NUM  fer
-        n = n + i;
-        i = i + 1;
-     fimentre;
+funcio ,  retornar  
 
-     escriure (n);
-fi
+ 
+vector  de 
+
+
+
+//operadores relacionales
+< > >= <= != ==
+
+// operadores l�gicos
+And OR NoT 
+
+// operadores aritm�ticos
++ - * /  
+
+//operadores de asignaci�n
+=
+
+>>
+
+// cte_l�gica
+"constantes l�gicas"
+CeRT FaLS
+
+// cte_sencera
+"constante entera"
+098 	 0 2324242
+
+
+// cte_cadena
+"Q q  A a � � � � � � � � � z 1 2 3 ! � $ % & / ( ) = ' �" 
+
+""    	 //esto es una cadena vac�a
+
+
+
+//s�mbols especials
+; ( ) : , [ ]   {}
+
+
+// error lexicografico el . no es nada!
+.
+
+escriure llegir
+
+mentre fer fimentre
+
+si llavors sino fisi 
+
+repetir fins
+
+ //un id que no es mentre
+mentre2
+
+//dos paraules claus que son 1 id
+
+sillavors
+
+//los blancos 
+i+2
+i + 2
+
+//un id de longitud 41  
+
+aaaaaaaaaaaaaaaaaaaaaaaaaaviscaLlenguatgesProgramacio2018
+
+//un error con  un caracter perdido
+$
+
+// esto es un comentario con � trancada y con acentos en catal�
+
+// a continuaci�n viene una constante cadena con intro y deberia dar error
+
+" identificador
+"
+
+// esto es un comenatario al final del fichero!
+
+//Validacio d'un vector
+vector
+[
+]
+enter
+
+CONST
+FI
+INICI
+
+(
+)
+/
+?
+>
+<
+@
+#
+%
+^
