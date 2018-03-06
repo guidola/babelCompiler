@@ -38,5 +38,7 @@ public enum TokenType {
     LLAVORS,
     SINO,
     FISI,
-    RETORNAR
+    RETORNAR,
+
+    EOF
 }

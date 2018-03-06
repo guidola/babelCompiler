@@ -22,8 +22,9 @@ public class Compiler {
             while (true) {
 
                 if( r == -1 ) {
-                    alex.nextChar(-1, ' ');
-                    break;
+                    if(alex.nextChar(-1, '\n') == Alex.EOF) {
+                        break;
+                    }
                 }
 
                 char ch = (char) r;

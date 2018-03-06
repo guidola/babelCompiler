@@ -8,6 +8,7 @@ public class Alex {
     public static final int STAY_AND_NEW_LINE   = 0x02;
     public static final int STEP                = 0x03;
     public static final int STEP_AND_NEW_LINE   = 0x04;
+    public static final int EOF   = 0x05;
 
     private static final String sre_relationalOperators = "[><!]";
     private static final String sre_specialCharacters = "[;:,()\\[\\]{}&]";
@@ -35,16 +36,16 @@ public class Alex {
 
     public int nextChar(int line, char c) {
 
-        if (line == -1 ) {
-            log.close();
-            return STAY;
-        }
-
         switch(state) {
 
             case 0x00:
                 actualLexem = Character.toString(c);
                 if(Character.toString(c).matches(sre_whitespacesTabsAndLinejumps)) {
+                    if (line == -1 ) {
+                        log.writeToken(new Token(TokenType.EOF, ""));
+                        log.close();
+                        return EOF;
+                    }
                     return STEP;
                 } else if(c == '='){
                     state = 0x01;
