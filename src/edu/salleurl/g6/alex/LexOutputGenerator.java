@@ -23,9 +23,9 @@ public class LexOutputGenerator {
     private void initLexOutFile(String filename) {
 
         try {
-            lexFile = new PrintWriter("out/" + filename + ".lex");
+            lexFile = new PrintWriter(filename + ".lex");
         } catch (FileNotFoundException e) {
-            File  f = new File("out/" + filename + ".lex");
+            File  f = new File(filename + ".lex");
             f.getParentFile().mkdirs();
             try {
                 f.createNewFile();
@@ -39,9 +39,9 @@ public class LexOutputGenerator {
     private void initErrOutFile(String filename) {
 
         try {
-            errFile = new PrintWriter("out/" + filename + ".err");
+            errFile = new PrintWriter(filename + ".err");
         } catch (FileNotFoundException e) {
-            File  f = new File("out/" + filename + ".err");
+            File  f = new File(filename + ".err");
             f.getParentFile().mkdirs();
             try {
                 f.createNewFile();

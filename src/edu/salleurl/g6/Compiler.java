@@ -24,6 +24,8 @@ public class Compiler {
                 if( r == -1 ) {
                     if(alex.nextChar(-1, '\n') == Alex.EOF) {
                         break;
+                    } else {
+                        continue;
                     }
                 }
 
