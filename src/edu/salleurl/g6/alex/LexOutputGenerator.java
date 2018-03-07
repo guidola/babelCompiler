@@ -52,8 +52,9 @@ public class LexOutputGenerator {
         }
     }
 
-    public void writeToken(Token t) {
+    public Token writeToken(Token t) {
         lexFile.println(t.toString());
+        return t;
     }
 
     public void writeError(String e) {

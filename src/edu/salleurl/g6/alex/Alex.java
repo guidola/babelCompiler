@@ -2,12 +2,14 @@ package edu.salleurl.g6.alex;
 
 import edu.salleurl.g6.model.*;
 
+import java.io.*;
+
 public class Alex {
 
     public static final int STAY                = 0x01;
-    public static final int STAY_AND_NEW_LINE   = 0x02;
+    public static final int STEP_AND_GOT_TOKEN   = 0x02;
     public static final int STEP                = 0x03;
-    public static final int STEP_AND_NEW_LINE   = 0x04;
+    public static final int STAY_AND_GOT_TOKEN   = 0x04;
     public static final int EOF   = 0x05;
 
     private static final String sre_relationalOperators = "[><!]";
@@ -22,8 +24,12 @@ public class Alex {
 
     private static final int MAX_STR_LEN = 32;
 
+    private Reader in;
+    private int r;
+    private int line;
 
     private int state;
+    private Token lastToken;
     private String actualLexem;
     private LexOutputGenerator log;
 
@@ -31,7 +37,63 @@ public class Alex {
         state = 0x00;
         actualLexem = "";
         log = new LexOutputGenerator(filename);
+        try {
+            InputStream is = new FileInputStream(new File(filename));
+            Reader reader = new InputStreamReader(is);
+            in = new BufferedReader(reader);
+        } catch (IOException e) {
+            System.err.println("Invalid filename. Abort.");
+            System.exit(1);
+        }
+        try {
+            r = in.read();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
+    private Token __handleLexInput() {
+
+        try {
+
+            while (true) {
+
+                if( r == -1 ) {
+                    if(nextChar(-1, '\n') == Alex.EOF) {
+                        return lastToken;
+                    } else {
+                        continue;
+                    }
+                }
+
+                char ch = (char) r;
+
+                switch(nextChar(line, Character.toLowerCase(ch))) {
+                    case STEP_AND_GOT_TOKEN:
+                        if(Character.toString((char)r).equals("\n")){line++;}
+                        r = in.read();
+                        return lastToken;
+                    case STEP:
+                        if(Character.toString((char)r).equals("\n")){line++;}
+                        r = in.read();
+                        break;
+                    case STAY_AND_GOT_TOKEN:
+                        return lastToken;
+                    
+                }
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    
+    public Token getToken() {
+        
+        return __handleLexInput();
+        
     }
 
     public int nextChar(int line, char c) {
@@ -42,7 +104,7 @@ public class Alex {
                 actualLexem = Character.toString(c);
                 if(Character.toString(c).matches(sre_whitespacesTabsAndLinejumps)) {
                     if (line == -1 ) {
-                        log.writeToken(new Token(TokenType.EOF, ""));
+                        lastToken = log.writeToken(new Token(TokenType.EOF, ""));
                         log.close();
                         return EOF;
                     }
@@ -57,8 +119,8 @@ public class Alex {
                     return STEP;
 
                 } else if (c == '*') {
-                    log.writeToken(new Token(TokenType.COMPLEX_ARITHMETIC_OPERATOR, Character.toString(c)));
-                    return STEP;
+                    lastToken = log.writeToken(new Token(TokenType.COMPLEX_ARITHMETIC_OPERATOR, Character.toString(c)));
+                    return STEP_AND_GOT_TOKEN;
 
                 } else if (c == '/') {
                     state = 0x03;
@@ -77,13 +139,13 @@ public class Alex {
                     return STEP;
 
                 } else if(Character.toString(c).matches(sre_simpleArithmeticOperator)) {
-                    log.writeToken(new Token(TokenType.SIMPLE_ARITHMETIC_OPERATOR, Character.toString(c)));
-                    return STEP;
+                    lastToken = log.writeToken(new Token(TokenType.SIMPLE_ARITHMETIC_OPERATOR, Character.toString(c)));
+                    return STEP_AND_GOT_TOKEN;
 
                 } else if(Character.toString(c).matches(sre_specialCharacters)) {
                     state = 0x00;
-                    log.writeToken(ReservedWordsDictionary.getInstance().check(actualLexem));
-                    return STEP;
+                    lastToken = log.writeToken(ReservedWordsDictionary.getInstance().check(actualLexem));
+                    return STEP_AND_GOT_TOKEN;
                 } else {
                     log.writeError(ErrorFactory.error(ErrorTypes.LEX_UNKNOWN_CHAR, line, c));
                     return STEP;
@@ -92,21 +154,21 @@ public class Alex {
             case 0x01:
                 if (c == '=') {
                     actualLexem = actualLexem + Character.toString(c);
-                    log.writeToken(new Token(TokenType.RELATIONAL_OPERATOR, actualLexem));
+                    lastToken = log.writeToken(new Token(TokenType.RELATIONAL_OPERATOR, actualLexem));
                     state = 0x00;
-                    return STEP;
+                    return STEP_AND_GOT_TOKEN;
                 } else {
-                    log.writeToken(new Token(TokenType.ASSIGNMENT, actualLexem));
+                    lastToken = log.writeToken(new Token(TokenType.ASSIGNMENT, actualLexem));
                     state = 0x00;
-                    return STAY;
+                    return STAY_AND_GOT_TOKEN;
                 }
 
 
             case 0x02:
                 if(c == '"') {
                     state = 0x00;
-                    log.writeToken(new Token(TokenType.STRING, actualLexem));
-
+                    lastToken = log.writeToken(new Token(TokenType.STRING, actualLexem));
+                    return STEP_AND_GOT_TOKEN;
                 } else if(Character.toString(c).matches(re_Linejumps)) {
                     log.writeError(ErrorFactory.error(ErrorTypes.LEX_UNTERMINATED_STRING, line, c));
                     state = 0x00;
@@ -120,9 +182,9 @@ public class Alex {
                     state = 0x04;
                     return STEP;
                 } else {
-                    log.writeToken(new Token(TokenType.COMPLEX_ARITHMETIC_OPERATOR, actualLexem));
+                    lastToken = log.writeToken(new Token(TokenType.COMPLEX_ARITHMETIC_OPERATOR, actualLexem));
                     state = 0x00;
-                    return STAY;
+                    return STAY_AND_GOT_TOKEN;
                 }
 
             case 0x04:
@@ -134,14 +196,15 @@ public class Alex {
             case 0x05:
                 if(c == '=') {
                     actualLexem = actualLexem + Character.toString(c);
-                    log.writeToken(new Token(TokenType.RELATIONAL_OPERATOR, actualLexem));
+                    lastToken = log.writeToken(new Token(TokenType.RELATIONAL_OPERATOR, actualLexem));
                     state = 0x00;
-                    return STEP;
+                    return STEP_AND_GOT_TOKEN;
                 } else if (actualLexem.matches("[><]")) {
-                    log.writeToken(new Token(TokenType.RELATIONAL_OPERATOR, actualLexem));
+                    lastToken = log.writeToken(new Token(TokenType.RELATIONAL_OPERATOR, actualLexem));
                     state = 0x00;
-                    return STAY;
+                    return STAY_AND_GOT_TOKEN;
                 } else {
+                    state = 0x00;
                     return STAY;
                 }
 
@@ -149,13 +212,13 @@ public class Alex {
                 if(!Character.toString(c).matches(re_validIdChars)) {
                     state = 0x00;
                     if(actualLexem.length() <= MAX_STR_LEN){
-                        log.writeToken(ReservedWordsDictionary.getInstance().check(actualLexem));
+                        lastToken = log.writeToken(ReservedWordsDictionary.getInstance().check(actualLexem));
                     }else{
                         log.writeError(ErrorFactory.warning(line,"Identifier is too long"));
-                        log.writeToken(ReservedWordsDictionary.getInstance().check(actualLexem.substring(0, MAX_STR_LEN)));
+                        lastToken = log.writeToken(ReservedWordsDictionary.getInstance().check(actualLexem.substring(0, MAX_STR_LEN)));
                     }
 
-                    return STAY;
+                    return STAY_AND_GOT_TOKEN;
                 }
                 actualLexem = actualLexem + Character.toString(c);
                 return STEP;
@@ -163,8 +226,8 @@ public class Alex {
             case 0x07:
                 if(!Character.toString(c).matches(sre_numbers)) {
                     state = 0x00;
-                    log.writeToken(new Token(TokenType.INTEGER_CONSTANT, actualLexem));
-                    return STAY;
+                    lastToken = log.writeToken(new Token(TokenType.INTEGER_CONSTANT, actualLexem));
+                    return STAY_AND_GOT_TOKEN;
                 }
                 actualLexem = actualLexem + Character.toString(c);
                 return STEP;

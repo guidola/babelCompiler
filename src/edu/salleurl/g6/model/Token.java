@@ -31,4 +31,8 @@ public class Token {
     public String toString() {
         return "[" + type + "] " + lexem;
     }
+
+    public boolean isEOF() {
+        return this.type == TokenType.EOF;
+    }
 }
