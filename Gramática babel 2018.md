@@ -8,11 +8,11 @@
 6. llista\_dec\_func -> **∑**
 7. dec\_var -> **const id =** *exp* **;**
 8. dec\_var -> *Tipus* **id ;**
-9. dec\_func -> **funcio id (** *llista\_param* **) :** *tipus\_simple* **{** *llista\_dec\_var *llista\_inst* **} ;**
+9. dec\_func -> **funcio id (** *llista\_param* **) :** **tipus\_simple** **{** *llista\_dec\_var* *llista\_inst* **} ;**
 10. llista\_param -> **∑**
 11. llista\_param -> *Tipus* *is\_ref* **id** *llista\_param\_aux*
 12. is\_ref -> **∑**
-13. is\_ref -> **&**
+13. is\_ref -> **amps**
 14. llista\_param\_aux -> **∑**
 15. llista\_param\_aux -> **,** *llista\_param*
 16. tipus -> **tipus\_simple**
@@ -51,7 +51,7 @@
 49. llista\_inst -> *inst* ; *llista\_inst\_aux*
 50. llista\_inst\_aux -> **∑**
 51. llista\_inst\_aux -> *llista\_inst*
-52. inst -> *variable* **=** *exp*
+52. inst -> *variable* **op_rel** *exp*
 53. inst -> **escriure (** *llista\_exp\_non\_empty* **)**
 54. inst -> **llegir (** *llista_variable* **)**
 55. llista\_variable -> *variable* *llista\_var\_aux*
