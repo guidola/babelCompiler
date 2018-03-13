@@ -1,0 +1,68 @@
+//palabras claves reservadas
+ Inici fI 
+funcio   reTornar  
+vector  de 
+escriure llegir
+mentre feR fimentre
+si llavors sino fisi 
+repetir fins
+
+//operadores relacionales
+< > >= <= != ==
+
+// operadores lógicos
+And OR NoT 
+
+// operadores aritméticos
++ - * /  
+
+//operadores de asignación
+=
+
+// cte_lògica
+CeRT FaLS
+
+// tipus simple 
+senceR LOgic
+
+// cte_sencera
+098 	 0 2324242
+
+//id's
+mentre2
+sillavorS
+_id1
+I_Get_
+
+//símbols especials
+; ( ) : , [ ]   {} &
+
+!<
+>>
+.
+%  $
+
+//un id de longitud 41  
+aaaaaaaaaaaaaaaaaaaaaaaaaaviscaLlenguatgesProgramacio2018
+
+//los blancos 
+i+2
+i + 2
+
+// cte_cadena
+"constante CADENA con acentos"
+"Q q  A a ñ á à é è ó Ç ò ü z 1 2 3 ! · $ % & / ( ) = ' ¡" 
+""    	 //esto es una cadena vacía
+
+" identificador
+"
+
+"	tiene tab "
+
+// esto es un comentario al final del fichero!
+
+
+
+
+
+
