@@ -4,7 +4,7 @@ public interface SpecialChars
 {
     String STATEMENT_SEPARATOR = ";";
     String RETURN_TYPE_PREFIX = ":";
-    String DECIMAL = ".";
+
     String ARGUMENT_SEPARATOR = ",";
     String PARENTHESIS_OPEN = "(";
     String PARENTHESIS_CLOSE = ")";

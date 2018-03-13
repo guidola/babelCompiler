@@ -1,12 +1,12 @@
 const NUM = 20 ;
 inici
     n =0;
-                            USUARI = 0;
-    i=0
-    ´´´¨€®†¥  ø§¶™ƒ∂∫€¢®†¥  øπ[{~„§¶ µ§ „µ ß√©å\|@#¢∞¬÷“”≠´‚¢#@|Œ
+    usuari = 0;
+    i=0;
     mentre i < NUM  fer
         llegir(usuari);
-        n = n + usuari;||||||@#¢∞¬÷“”¢∞¬÷
+        n = n + usuari;
         i = i + 1;
-    fimentr
+     fim
+
 fi
