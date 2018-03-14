@@ -1,29 +1,29 @@
 package edu.salleurl.g6.asi;
 
-import com.sun.org.apache.bcel.internal.generic.SWITCH;
 import edu.salleurl.g6.alex.Alex;
-import edu.salleurl.g6.model.Token;
-import edu.salleurl.g6.model.TokenType;
+import edu.salleurl.g6.model.*;
 
 public class Asi {
 
     private Token lat;
-    private Alex alex;
 
     public Asi(String filename) {
-        alex = new Alex(filename);
-        lat = alex.getToken();
+
+        Alex.init(filename);
+        lat = Alex.getToken();
     }
 
 
-    private  void consume(TokenType t){
+    private  void consume(TokenType t) throws SyntacticException {
         if(t == lat.getType()){
-
+            lat = Alex.getToken();
+            return;
         }
 
+        throw(ExceptionFactory.consume(t, lat.getType()));
     }
 
-    public void programa(){
+    public void programa() throws SyntacticException {
         llistaDecVar();
         llistaDecFunc();
         consume(TokenType.INICI);
@@ -32,7 +32,7 @@ public class Asi {
 
     }
 
-    public void llistaDecVar(){
+    private void llistaDecVar() throws SyntacticException {
         switch (lat.getType()){
             case CONST:
             case SIMPLE_TYPE:
@@ -45,7 +45,7 @@ public class Asi {
         }
     }
 
-    public void decVar(){
+    private void decVar() throws SyntacticException {
         switch (lat.getType()){
             case CONST:
                 consume(TokenType.CONST);
@@ -61,22 +61,22 @@ public class Asi {
                 consume(TokenType.STATEMENT_SEPARATOR);
                 break;
             default:
-                //ERROR
+                throw(ExceptionFactory.decVar(lat.getType()));
         }
     }
 
-    public void exp(){
+    private void exp() throws SyntacticException {
         expSimple();
         llistaExpSimple();
     }
 
-    public void expSimple(){
+    private void expSimple() throws SyntacticException {
         opu();
         terme();
         llistaTermes();
     }
 
-    public void opu(){
+    private void opu() throws SyntacticException {
         switch (lat.getType()){
             case SIMPLE_ARITHMETIC_OPERATOR:
                 consume(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
@@ -88,11 +88,11 @@ public class Asi {
         }
     }
 
-    public void terme(){
+    private void terme() throws SyntacticException {
         factor();
         factorAux();
     }
-    public void factor(){
+    private void factor() throws SyntacticException {
         switch (lat.getType()){
             case INTEGER_CONSTANT:
                 consume(TokenType.INTEGER_CONSTANT);
@@ -113,11 +113,11 @@ public class Asi {
                 consume(TokenType.PARENTHESIS_CLOSE);
                 break;
             default:
-                //ERROR
+                throw(ExceptionFactory.factor(lat.getType()));
         }
     }
 
-    public void factorIdSufix(){
+    private void factorIdSufix() throws SyntacticException {
         switch (lat.getType()){
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
@@ -129,7 +129,7 @@ public class Asi {
         }
     }
 
-    public void isVector(){
+    private void isVector() throws SyntacticException {
         switch (lat.getType()){
             case BRACKETS_OPEN:
                 consume(TokenType.BRACKETS_OPEN);
@@ -141,7 +141,7 @@ public class Asi {
         }
     }
 
-    public void llistaExp(){
+    private void llistaExp() throws SyntacticException {
         switch (lat.getType()){
             case SIMPLE_ARITHMETIC_OPERATOR:
             case NOT:
@@ -157,12 +157,12 @@ public class Asi {
         }
     }
 
-    public void llistaExpNonEmpty(){
+    private void llistaExpNonEmpty() throws SyntacticException {
         exp();
         llistaExpAux();
     }
 
-    public void llistaExpAux(){
+    private void llistaExpAux() throws SyntacticException {
         switch (lat.getType()){
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);
@@ -173,7 +173,7 @@ public class Asi {
         }
     }
 
-    public void factorAux(){
+    private void factorAux() throws SyntacticException {
         switch(lat.getType()){
             case COMPLEX_ARITHMETIC_OPERATOR:
             case AND:
@@ -185,7 +185,7 @@ public class Asi {
         }
     }
 
-    public void opb(){
+    private void opb() throws SyntacticException {
         switch (lat.getType()){
             case COMPLEX_ARITHMETIC_OPERATOR:
                 consume(TokenType.COMPLEX_ARITHMETIC_OPERATOR);
@@ -194,16 +194,24 @@ public class Asi {
                 consume(TokenType.AND);
                 break;
             default:
-                //ERROR
+                throw(ExceptionFactory.opb(lat.getType()));
         }
     }
 
-    public void llistaTermes(){
-        ops();
-        terme();
-        llistaTermes();
+    private void llistaTermes() throws SyntacticException {
+        switch(lat.getType()) {
+            case SIMPLE_ARITHMETIC_OPERATOR:
+            case OR:
+                ops();
+                terme();
+                llistaTermes();
+            default:
+                break;
+        }
+
+
     }
-    public void ops(){
+    private void ops() throws SyntacticException {
         switch (lat.getType()){
             case SIMPLE_ARITHMETIC_OPERATOR:
                 consume(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
@@ -212,11 +220,11 @@ public class Asi {
                 consume(TokenType.OR);
                 break;
             default:
-                //ERROR
+                throw(ExceptionFactory.ops(lat.getType()));
         }
     }
 
-    public void llistaExpSimple(){
+    private void llistaExpSimple() throws SyntacticException {
         switch(lat.getType()){
             case RELATIONAL_OPERATOR:
                 consume(TokenType.RELATIONAL_OPERATOR);
@@ -227,7 +235,7 @@ public class Asi {
         }
     }
 
-    public void tipus(){
+    private void tipus() throws SyntacticException {
         switch(lat.getType()){
             case SIMPLE_TYPE:
                 consume(TokenType.SIMPLE_TYPE);
@@ -241,11 +249,11 @@ public class Asi {
                 consume(TokenType.SIMPLE_TYPE);
                 break;
             default:
-                //ERRROR
+                throw(ExceptionFactory.tipus(lat.getType()));
         }
     }
 
-    public void llistaDecFunc(){
+    private void llistaDecFunc() throws SyntacticException {
         switch (lat.getType()){
             case FUNCIO:
                 decFunc();
@@ -255,7 +263,7 @@ public class Asi {
         }
     }
 
-    public void decFunc(){
+    private void decFunc() throws SyntacticException {
         consume(TokenType.FUNCIO);
         consume(TokenType.IDENTIFIER);
         consume(TokenType.PARENTHESIS_OPEN);
@@ -270,7 +278,7 @@ public class Asi {
         consume(TokenType.STATEMENT_SEPARATOR);
     }
 
-    public void llistaParam(){
+    private void llistaParam() throws SyntacticException {
         switch(lat.getType()){
             case SIMPLE_TYPE:
             case VECTOR:
@@ -284,7 +292,7 @@ public class Asi {
         }
     }
 
-    public void isRef(){
+    private void isRef() throws SyntacticException {
         switch (lat.getType()){
             case AMPERSAND:
                 consume(TokenType.AMPERSAND);
@@ -294,7 +302,7 @@ public class Asi {
         }
     }
 
-    public void llistaParamAux(){
+    private void llistaParamAux() throws SyntacticException {
         switch (lat.getType()){
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);
@@ -305,13 +313,13 @@ public class Asi {
         }
     }
 
-    public void llistaInst(){
+    private void llistaInst() throws SyntacticException {
         inst();
         consume(TokenType.STATEMENT_SEPARATOR);
         llistaInstAux();
     }
 
-    public void inst(){
+    private void inst() throws SyntacticException {
         switch(lat.getType()) {
             case REPETIR:
                 consume(TokenType.REPETIR);
@@ -336,7 +344,7 @@ public class Asi {
                 break;
             case IDENTIFIER:
                 variable();
-                consume(TokenType.RELATIONAL_OPERATOR);
+                consume(TokenType.ASSIGNMENT);
                 exp();
                 break;
             case ESCRIURE:
@@ -356,11 +364,11 @@ public class Asi {
                 llistaInst();
                 break;
             default:
-                //ERROR
+                throw(ExceptionFactory.inst(lat.getType()));
         }
     }
 
-    public void llistaInstAux() {
+    private void llistaInstAux() throws SyntacticException {
         switch (lat.getType()) {
             case REPETIR:
             case MENTRE:
@@ -375,7 +383,7 @@ public class Asi {
                 break;
         }
     }
-    public void hasSino(){
+    private void hasSino() throws SyntacticException {
         switch (lat.getType()){
             case SINO:
                 consume(TokenType.SINO);
@@ -386,17 +394,17 @@ public class Asi {
         }
     }
 
-    public void variable(){
+    private void variable() throws SyntacticException {
         consume(TokenType.IDENTIFIER);
         isVector();
     }
 
-    public void llistaVar(){
+    private void llistaVar() throws SyntacticException {
         variable();
         llistaVarAux();
     }
 
-    public void llistaVarAux(){
+    private void llistaVarAux() throws SyntacticException {
         switch (lat.getType()){
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);

@@ -43,7 +43,6 @@ public class ReservedWordsDictionary {
 
         reservedWords.put(SpecialChars.STATEMENT_SEPARATOR, new Token(TokenType.STATEMENT_SEPARATOR , SpecialChars.STATEMENT_SEPARATOR));
         reservedWords.put(SpecialChars.RETURN_TYPE_PREFIX, new Token(TokenType.RETURN_TYPE_PREFIX, SpecialChars.RETURN_TYPE_PREFIX));
-        reservedWords.put(SpecialChars.DECIMAL, new Token(TokenType.DECIMAL, SpecialChars.DECIMAL));
         reservedWords.put(SpecialChars.ARGUMENT_SEPARATOR, new Token(TokenType.ARGUMENT_SEPARATOR, SpecialChars.ARGUMENT_SEPARATOR));
         reservedWords.put(SpecialChars.PARENTHESIS_OPEN, new Token(TokenType.PARENTHESIS_OPEN, SpecialChars.PARENTHESIS_OPEN));
         reservedWords.put(SpecialChars.PARENTHESIS_CLOSE, new Token(TokenType.PARENTHESIS_CLOSE, SpecialChars.PARENTHESIS_CLOSE));

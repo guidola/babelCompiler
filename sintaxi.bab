@@ -7,6 +7,5 @@ inici
         llegir(usuari);
         n = n + usuari;
         i = i + 1;
-     fim
-
+    fimentre;
 fi

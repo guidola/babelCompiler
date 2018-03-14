@@ -1,14 +1,13 @@
 package edu.salleurl.g6;
 
-import edu.salleurl.g6.alex.Alex;
-import edu.salleurl.g6.model.Token;
+import edu.salleurl.g6.asi.Asi;
+import edu.salleurl.g6.model.SyntacticException;
 
-import java.io.*;
 
 public class Compiler {
 
 
-    private Alex alex;
+    private Asi asi;
 
     public Compiler() {
     }
@@ -16,14 +15,12 @@ public class Compiler {
 
     public void analyze(String filename) {
 
-        alex = new Alex(filename);
+        asi = new Asi(filename);
 
-        Token t = null;
-
-        while( t == null || !t.isEOF() ) {
-
-            t = alex.getToken();
-
+        try {
+            asi.programa();
+        } catch (SyntacticException e) {
+            e.printStackTrace();
         }
 
     }

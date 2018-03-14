@@ -24,18 +24,21 @@ public class Alex {
 
     private static final int MAX_STR_LEN = 32;
 
-    private Reader in;
-    private int r;
-    private int line;
+    private static Reader in;
+    private static int r;
+    private static int line;
 
-    private int state;
-    private Token lastToken;
-    private String actualLexem;
-    private LexOutputGenerator log;
+    private static int state;
+    private static Token lastToken;
+    private static String actualLexem;
+    private static LexOutputGenerator log;
 
-    public Alex(String filename) {
+    private static Alex alex;
+
+    private Alex(String filename) {
         state = 0x00;
         actualLexem = "";
+        line = 1;
         log = new LexOutputGenerator(filename);
         try {
             InputStream is = new FileInputStream(new File(filename));
@@ -52,18 +55,29 @@ public class Alex {
         }
     }
 
-    private Token __handleLexInput() {
+    public static void init(String filename) {
+        alex = new Alex(filename);
+    }
+
+    public static Alex getInstance() throws Exception {
+        if (alex == null) {
+            throw new Exception("Failed to get an alex instance since it has not been initialized");
+        }
+
+        return alex;
+    }
+
+    public static int getLine() {return line;}
+
+    private static Token __handleLexInput() {
 
         try {
 
             while (true) {
 
                 if( r == -1 ) {
-                    if(nextChar(-1, '\n') == Alex.EOF) {
-                        return lastToken;
-                    } else {
-                        continue;
-                    }
+                    nextChar(-1, '\n');
+                    return lastToken;
                 }
 
                 char ch = (char) r;
@@ -90,13 +104,13 @@ public class Alex {
         return null;
     }
     
-    public Token getToken() {
+    public static Token getToken() {
         
         return __handleLexInput();
         
     }
 
-    public int nextChar(int line, char c) {
+    public static int nextChar(int line, char c) {
 
         switch(state) {
 
