@@ -218,6 +218,7 @@ public class Alex {
                     state = 0x00;
                     return STAY_AND_GOT_TOKEN;
                 } else {
+                    log.writeError(ErrorFactory.error(ErrorTypes.LEX_UNKNOWN_CHAR, line, actualLexem.charAt(0)));
                     state = 0x00;
                     return STAY;
                 }
