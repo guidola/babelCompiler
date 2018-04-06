@@ -67,7 +67,7 @@ public class Asi {
                 try {
                     consume(TokenType.IDENTIFIER);
                 } catch (SyntacticException se) {
-                    consumeUntilSync();
+                    //consumeUntilSync();
                 }
                 consume(TokenType.ASSIGNMENT);
                 exp();
