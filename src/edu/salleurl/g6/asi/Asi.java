@@ -3,6 +3,7 @@ package edu.salleurl.g6.asi;
 import edu.salleurl.g6.alex.Alex;
 import edu.salleurl.g6.model.*;
 
+
 public class Asi {
 
     private Token lat;
@@ -14,13 +15,27 @@ public class Asi {
     }
 
 
-    private  void consume(TokenType t) throws SyntacticException {
+    private void consume(TokenType t) throws SyntacticException {
         if(t == lat.getType()){
             lat = Alex.getToken();
             return;
         }
 
         throw(ExceptionFactory.consume(t, lat.getType()));
+    }
+
+    private void consumeUntilSync(TokenType[] ts) {
+
+        while(true) {
+            lat = Alex.getToken();
+            for(TokenType t : ts) {
+
+                if (t == lat.getType()) {
+                    return;
+                }
+            }
+        }
+
     }
 
     public void programa() throws SyntacticException {
@@ -49,7 +64,11 @@ public class Asi {
         switch (lat.getType()){
             case CONST:
                 consume(TokenType.CONST);
-                consume(TokenType.IDENTIFIER);
+                try {
+                    consume(TokenType.IDENTIFIER);
+                } catch (SyntacticException se) {
+                    consumeUntilSync();
+                }
                 consume(TokenType.ASSIGNMENT);
                 exp();
                 consume(TokenType.STATEMENT_SEPARATOR);
