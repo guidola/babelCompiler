@@ -80,7 +80,7 @@ public class Asi {
                 try {
                     consume(TokenType.IDENTIFIER);
                 } catch (SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    //consumeUntilSync(SyncVectors.);
                 }
                 try {
                     consume(TokenType.ASSIGNMENT);
