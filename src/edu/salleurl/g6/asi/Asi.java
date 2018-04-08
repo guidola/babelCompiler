@@ -41,9 +41,22 @@ public class Asi {
     public void programa() throws SyntacticException {
         llistaDecVar();
         llistaDecFunc();
-        consume(TokenType.INICI);
+
+        waitForIniciToBeReady();
+        try {
+            consume(TokenType.INICI);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
+
         llistaInst();
-        consume(TokenType.FI);
+
+        try {
+            consume(TokenType.FI);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
+
 
     }
 
@@ -67,25 +80,47 @@ public class Asi {
                 try {
                     consume(TokenType.IDENTIFIER);
                 } catch (SyntacticException se) {
-                    consumeUntilSync();
+                    consumeUntilSync(SyncVectors.);
                 }
-                consume(TokenType.ASSIGNMENT);
+                try {
+                    consume(TokenType.ASSIGNMENT);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 exp();
-                consume(TokenType.STATEMENT_SEPARATOR);
+                try {
+                    consume(TokenType.STATEMENT_SEPARATOR);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 break;
             case SIMPLE_TYPE:
             case VECTOR:
                 tipus();
-                consume(TokenType.IDENTIFIER);
-                consume(TokenType.STATEMENT_SEPARATOR);
+                try {
+                    consume(TokenType.IDENTIFIER);
+                } catch (SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
+                try {
+                    consume(TokenType.STATEMENT_SEPARATOR);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 break;
             default:
-                throw(ExceptionFactory.decVar(lat.getType()));
+                //instead of throwing an exception we will automatically sync against follows of possible usages
+                consumeUntilSync(SyncVectors.);
+                //throw(ExceptionFactory.decVar(lat.getType()));
         }
     }
 
     private void exp() throws SyntacticException {
-        expSimple();
+        try {
+            expSimple();
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
         llistaExpSimple();
     }
 
@@ -129,7 +164,11 @@ public class Asi {
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
                 exp();
-                consume(TokenType.PARENTHESIS_CLOSE);
+                try {
+                    consume(TokenType.PARENTHESIS_CLOSE);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 break;
             default:
                 throw(ExceptionFactory.factor(lat.getType()));
@@ -141,7 +180,11 @@ public class Asi {
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
                 llistaExp();
-                consume(TokenType.PARENTHESIS_CLOSE);
+                try {
+                    consume(TokenType.PARENTHESIS_CLOSE);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 break;
             default:
                 isVector();
@@ -153,7 +196,11 @@ public class Asi {
             case BRACKETS_OPEN:
                 consume(TokenType.BRACKETS_OPEN);
                 exp();
-                consume(TokenType.BRACKETS_CLOSE);
+                try {
+                    consume(TokenType.BRACKETS_CLOSE);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 break;
             default:
                 break;
@@ -247,7 +294,11 @@ public class Asi {
         switch(lat.getType()){
             case RELATIONAL_OPERATOR:
                 consume(TokenType.RELATIONAL_OPERATOR);
-                expSimple();
+                try {
+                    expSimple();
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 break;
             default:
                 break;
@@ -261,14 +312,25 @@ public class Asi {
                 break;
             case VECTOR:
                 consume(TokenType.VECTOR);
-                consume(TokenType.BRACKETS_OPEN);
-                consume(TokenType.INTEGER_CONSTANT);
-                consume(TokenType.BRACKETS_CLOSE);
-                consume(TokenType.DE);
-                consume(TokenType.SIMPLE_TYPE);
+                try {
+                    consume(TokenType.BRACKETS_OPEN);
+                    consume(TokenType.INTEGER_CONSTANT);
+                    consume(TokenType.BRACKETS_CLOSE);
+
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
+                try {
+                    consume(TokenType.DE);
+                    consume(TokenType.SIMPLE_TYPE);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 break;
             default:
-                throw(ExceptionFactory.tipus(lat.getType()));
+                //instead of throwing an exception we will automatically sync against follows of possible usages
+                consumeUntilSync(SyncVectors.);
+                //throw(ExceptionFactory.tipus(lat.getType()));
         }
     }
 
@@ -284,17 +346,51 @@ public class Asi {
 
     private void decFunc() throws SyntacticException {
         consume(TokenType.FUNCIO);
-        consume(TokenType.IDENTIFIER);
-        consume(TokenType.PARENTHESIS_OPEN);
+        try {
+            consume(TokenType.IDENTIFIER);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
+        try {
+            consume(TokenType.PARENTHESIS_OPEN);
+
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
         llistaParam();
-        consume(TokenType.PARENTHESIS_CLOSE);
-        consume(TokenType.RETURN_TYPE_PREFIX);
-        consume(TokenType.SIMPLE_TYPE);
-        consume(TokenType.BRACKETS_OPEN);
+        try {
+            consume(TokenType.PARENTHESIS_CLOSE);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
+        try {
+            consume(TokenType.RETURN_TYPE_PREFIX);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
+        try {
+            consume(TokenType.SIMPLE_TYPE);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
+        try {
+            consume(TokenType.BRACKETS_OPEN);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
         llistaDecVar();
         llistaInst();
-        consume(TokenType.BRACKETS_CLOSE);
-        consume(TokenType.STATEMENT_SEPARATOR);
+        try {
+            consume(TokenType.BRACKETS_CLOSE);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
+        try {
+            consume(TokenType.STATEMENT_SEPARATOR);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+        }
+
     }
 
     private void llistaParam() throws SyntacticException {
@@ -303,7 +399,11 @@ public class Asi {
             case VECTOR:
                 tipus();
                 isRef();
-                consume(TokenType.IDENTIFIER);
+                try {
+                    consume(TokenType.IDENTIFIER);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 llistaParamAux();
                 break;
             default:
@@ -334,7 +434,12 @@ public class Asi {
 
     private void llistaInst() throws SyntacticException {
         inst();
-        consume(TokenType.STATEMENT_SEPARATOR);
+        try {
+            consume(TokenType.STATEMENT_SEPARATOR);
+        } catch(SyntacticException se) {
+            consumeUntilSync(SyncVectors.);
+            // recuperar contra el seguent token? se suposa que es un separador de inst si no el trobem anyway lo seguent hauria de ser unaltre inst
+        }
         llistaInstAux();
     }
 
@@ -343,47 +448,85 @@ public class Asi {
             case REPETIR:
                 consume(TokenType.REPETIR);
                 llistaInst();
-                consume(TokenType.FINS);
+                try {
+                    consume(TokenType.FINS);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 exp();
                 break;
             case MENTRE:
                 consume(TokenType.MENTRE);
                 exp();
-                consume(TokenType.FER);
+                try {
+                    consume(TokenType.FER);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 llistaInst();
                 consume(TokenType.FIMENTRE);
                 break;
             case SI:
                 consume(TokenType.SI);
                 exp();
-                consume(TokenType.LLAVORS);
+                try {
+                    consume(TokenType.LLAVORS);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 llistaInst();
                 hasSino();
-                consume(TokenType.FISI);
+                try {
+                    consume(TokenType.FISI);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 break;
             case IDENTIFIER:
                 variable();
-                consume(TokenType.ASSIGNMENT);
+                try {
+                    consume(TokenType.ASSIGNMENT);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                    //mby this error should be something like dude this aint an assignment which inst did u intend to do here?
+                }
                 exp();
                 break;
             case ESCRIURE:
                 consume(TokenType.ESCRIURE);
-                consume(TokenType.PARENTHESIS_OPEN);
+                try {
+                    consume(TokenType.PARENTHESIS_OPEN);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 llistaExpNonEmpty();
-                consume(TokenType.PARENTHESIS_CLOSE);
+                try {
+                    consume(TokenType.PARENTHESIS_CLOSE);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 break;
             case LLEGIR:
                 consume(TokenType.LLEGIR);
-                consume(TokenType.PARENTHESIS_OPEN);
+                try {
+                    consume(TokenType.PARENTHESIS_OPEN);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.);
+                }
                 llistaVar();
-                consume(TokenType.PARENTHESIS_CLOSE);
+                try {
+                    consume(TokenType.PARENTHESIS_CLOSE);
+                } catch(SyntacticException se) {
+
+                }
                 break;
             case RETORNAR:
                 consume(TokenType.RETORNAR);
-                llistaInst();
+                exp();
                 break;
             default:
-                throw(ExceptionFactory.inst(lat.getType()));
+                consumeUntilSync(SyncVectors.);
+                //throw(ExceptionFactory.inst(lat.getType()));
         }
     }
 
