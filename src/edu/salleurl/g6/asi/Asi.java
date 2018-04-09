@@ -38,15 +38,30 @@ public class Asi {
 
     }
 
+    private void waitForIniciToBeReady() {
+        while(true) {
+            lat = Alex.getToken();
+            if (TokenType.INICI == lat.getType() || TokenType.EOF == lat.getType()) {
+                return;
+            }
+
+        }
+    }
+
+    private void log(String text) {
+        System.err.println("[ERROR] line " + Alex.getLine() + ". " + text);
+    }
+
     public void programa() throws SyntacticException {
         llistaDecVar();
         llistaDecFunc();
 
-        waitForIniciToBeReady();
+        //waitForIniciToBeReady();
         try {
             consume(TokenType.INICI);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            log("Can't find main routine beginning. Got " + lat.getType() + "when expecting main routine INICI token");
+            consumeUntilSync(SyncVectors.inici);
         }
 
         llistaInst();
@@ -54,7 +69,8 @@ public class Asi {
         try {
             consume(TokenType.FI);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            log("Main routine does not end. Expected FI and got " + lat.getType() + "instead");
+            consumeUntilSync(SyncVectors.fi);
         }
 
 
@@ -80,18 +96,21 @@ public class Asi {
                 try {
                     consume(TokenType.IDENTIFIER);
                 } catch (SyntacticException se) {
-                    //consumeUntilSync(SyncVectors.);
+                    log("Missing identifier in left side of constant declaration");
+                    consumeUntilSync(SyncVectors.decVarLeftSide);
                 }
                 try {
                     consume(TokenType.ASSIGNMENT);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    log("Missing assignment in constant declaration");
+                    consumeUntilSync(SyncVectors.decVarRightSide);
                 }
                 exp();
                 try {
                     consume(TokenType.STATEMENT_SEPARATOR);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    log("Unterminated statement in constant declaration");
+                    consumeUntilSync(SyncVectors.decVarTerminating);
                 }
                 break;
             case SIMPLE_TYPE:
@@ -100,27 +119,26 @@ public class Asi {
                 try {
                     consume(TokenType.IDENTIFIER);
                 } catch (SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    log("Missing identifier in variable declaration");
+                    consumeUntilSync(SyncVectors.decVarRightSide);
                 }
                 try {
                     consume(TokenType.STATEMENT_SEPARATOR);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    log("Unterminated statement in variable declaration");
+                    consumeUntilSync(SyncVectors.decVarTerminating);
                 }
                 break;
             default:
                 //instead of throwing an exception we will automatically sync against follows of possible usages
-                consumeUntilSync(SyncVectors.);
+                log("Invalid statement in declaration");
+                consumeUntilSync(SyncVectors.decVarTerminating);
                 //throw(ExceptionFactory.decVar(lat.getType()));
         }
     }
 
     private void exp() throws SyntacticException {
-        try {
-            expSimple();
-        } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
-        }
+        expSimple();
         llistaExpSimple();
     }
 
@@ -167,11 +185,14 @@ public class Asi {
                 try {
                     consume(TokenType.PARENTHESIS_CLOSE);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    log("Unbalanced parenthesis in expression");
+                    consumeUntilSync(SyncVectors.factor);
                 }
                 break;
             default:
-                throw(ExceptionFactory.factor(lat.getType()));
+                log("Can't use " + lat.getLexem() + " as factor in expression");
+                consumeUntilSync(SyncVectors.factor);
+                //throw(ExceptionFactory.factor(lat.getType()));
         }
     }
 
@@ -183,7 +204,8 @@ public class Asi {
                 try {
                     consume(TokenType.PARENTHESIS_CLOSE);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    log("Missing closing parenthesis in function call");
+                    consumeUntilSync(SyncVectors.factor);
                 }
                 break;
             default:
@@ -199,7 +221,8 @@ public class Asi {
                 try {
                     consume(TokenType.BRACKETS_CLOSE);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    log("Missing closing bracket in subscript");
+                    consumeUntilSync(SyncVectors.factor);
                 }
                 break;
             default:
@@ -260,7 +283,9 @@ public class Asi {
                 consume(TokenType.AND);
                 break;
             default:
-                throw(ExceptionFactory.opb(lat.getType()));
+                log("Invalid binary operator " + lat.getLexem());
+                consumeUntilSync(SyncVectors.op);
+                //throw(ExceptionFactory.opb(lat.getType()));
         }
     }
 
@@ -286,7 +311,10 @@ public class Asi {
                 consume(TokenType.OR);
                 break;
             default:
-                throw(ExceptionFactory.ops(lat.getType()));
+                log("Invalid simple operator " + lat.getLexem());
+                consumeUntilSync(SyncVectors.op);
+                //throw(ExceptionFactory.ops(lat.getType()));
+
         }
     }
 
@@ -294,11 +322,7 @@ public class Asi {
         switch(lat.getType()){
             case RELATIONAL_OPERATOR:
                 consume(TokenType.RELATIONAL_OPERATOR);
-                try {
-                    expSimple();
-                } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
-                }
+                expSimple();
                 break;
             default:
                 break;
@@ -314,22 +338,30 @@ public class Asi {
                 consume(TokenType.VECTOR);
                 try {
                     consume(TokenType.BRACKETS_OPEN);
-                    consume(TokenType.INTEGER_CONSTANT);
-                    consume(TokenType.BRACKETS_CLOSE);
-
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.vector_brackets_open);
                 }
+                try {
+                    consume(TokenType.INTEGER_CONSTANT);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.vector_subscript);
+                }
+                try {
+                    consume(TokenType.BRACKETS_CLOSE);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.vector_brackets_close);
+                }
+
                 try {
                     consume(TokenType.DE);
                     consume(TokenType.SIMPLE_TYPE);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.tipus);
                 }
                 break;
             default:
-                //instead of throwing an exception we will automatically sync against follows of possible usages
-                consumeUntilSync(SyncVectors.);
+                log("Invalid type " + lat.getLexem());
+                consumeUntilSync(SyncVectors.tipus);
                 //throw(ExceptionFactory.tipus(lat.getType()));
         }
     }
@@ -349,46 +381,46 @@ public class Asi {
         try {
             consume(TokenType.IDENTIFIER);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            consumeUntilSync(SyncVectors.decFunc_id);
         }
         try {
             consume(TokenType.PARENTHESIS_OPEN);
 
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            consumeUntilSync(SyncVectors.decFunc_parenthesis_open);
         }
         llistaParam();
         try {
             consume(TokenType.PARENTHESIS_CLOSE);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            consumeUntilSync(SyncVectors.decFunc_parenthesis_close);
         }
         try {
             consume(TokenType.RETURN_TYPE_PREFIX);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            consumeUntilSync(SyncVectors.decFunc_ret_pref);
         }
         try {
             consume(TokenType.SIMPLE_TYPE);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            consumeUntilSync(SyncVectors.decFunc_ret_type);
         }
         try {
             consume(TokenType.BRACKETS_OPEN);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            consumeUntilSync(SyncVectors.decFunc_open_brackets);
         }
         llistaDecVar();
         llistaInst();
         try {
             consume(TokenType.BRACKETS_CLOSE);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            consumeUntilSync(SyncVectors.decFunc_close_brackets);
         }
         try {
             consume(TokenType.STATEMENT_SEPARATOR);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
+            consumeUntilSync(SyncVectors.decFunc);
         }
 
     }
@@ -402,7 +434,7 @@ public class Asi {
                 try {
                     consume(TokenType.IDENTIFIER);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.decFunc_params);
                 }
                 llistaParamAux();
                 break;
@@ -437,8 +469,7 @@ public class Asi {
         try {
             consume(TokenType.STATEMENT_SEPARATOR);
         } catch(SyntacticException se) {
-            consumeUntilSync(SyncVectors.);
-            // recuperar contra el seguent token? se suposa que es un separador de inst si no el trobem anyway lo seguent hauria de ser unaltre inst
+            consumeUntilSync(SyncVectors.llista_inst);
         }
         llistaInstAux();
     }
@@ -451,7 +482,7 @@ public class Asi {
                 try {
                     consume(TokenType.FINS);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.inst_repetir);
                 }
                 exp();
                 break;
@@ -461,10 +492,14 @@ public class Asi {
                 try {
                     consume(TokenType.FER);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.inst_mentre);
                 }
                 llistaInst();
-                consume(TokenType.FIMENTRE);
+                try {
+                    consume(TokenType.FIMENTRE);
+                } catch(SyntacticException se) {
+                    consumeUntilSync(SyncVectors.inst_fimentre);
+                }
                 break;
             case SI:
                 consume(TokenType.SI);
@@ -472,14 +507,14 @@ public class Asi {
                 try {
                     consume(TokenType.LLAVORS);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.inst_si);
                 }
                 llistaInst();
                 hasSino();
                 try {
                     consume(TokenType.FISI);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.inst_fisi);
                 }
                 break;
             case IDENTIFIER:
@@ -487,7 +522,7 @@ public class Asi {
                 try {
                     consume(TokenType.ASSIGNMENT);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.inst_id);
                     //mby this error should be something like dude this aint an assignment which inst did u intend to do here?
                 }
                 exp();
@@ -497,13 +532,13 @@ public class Asi {
                 try {
                     consume(TokenType.PARENTHESIS_OPEN);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.inst_escriure_par_open);
                 }
                 llistaExpNonEmpty();
                 try {
                     consume(TokenType.PARENTHESIS_CLOSE);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.inst_escriure);
                 }
                 break;
             case LLEGIR:
@@ -511,13 +546,13 @@ public class Asi {
                 try {
                     consume(TokenType.PARENTHESIS_OPEN);
                 } catch(SyntacticException se) {
-                    consumeUntilSync(SyncVectors.);
+                    consumeUntilSync(SyncVectors.inst_llegir_par_open);
                 }
                 llistaVar();
                 try {
                     consume(TokenType.PARENTHESIS_CLOSE);
                 } catch(SyntacticException se) {
-
+                    consumeUntilSync(SyncVectors.inst_llegir);
                 }
                 break;
             case RETORNAR:
@@ -525,7 +560,7 @@ public class Asi {
                 exp();
                 break;
             default:
-                consumeUntilSync(SyncVectors.);
+                consumeUntilSync(SyncVectors.llista_inst);
                 //throw(ExceptionFactory.inst(lat.getType()));
         }
     }
