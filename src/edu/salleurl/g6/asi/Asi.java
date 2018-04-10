@@ -27,13 +27,13 @@ public class Asi {
     private void consumeUntilSync(TokenType[] ts) {
 
         while(true) {
-            lat = Alex.getToken();
             for(TokenType t : ts) {
 
                 if (t == lat.getType()) {
                     return;
                 }
             }
+            lat = Alex.getToken();
         }
 
     }
@@ -339,16 +339,19 @@ public class Asi {
                 try {
                     consume(TokenType.BRACKETS_OPEN);
                 } catch(SyntacticException se) {
+                    log("Unbalanced brackets in vector declaration");
                     consumeUntilSync(SyncVectors.vector_brackets_open);
                 }
                 try {
                     consume(TokenType.INTEGER_CONSTANT);
                 } catch(SyntacticException se) {
+                    log("Non integer '" + lat.getLexem() + "' provided as vector subscript");
                     consumeUntilSync(SyncVectors.vector_subscript);
                 }
                 try {
                     consume(TokenType.BRACKETS_CLOSE);
                 } catch(SyntacticException se) {
+                    log("Unbalanced brackets in vector declaration");
                     consumeUntilSync(SyncVectors.vector_brackets_close);
                 }
 
@@ -356,6 +359,7 @@ public class Asi {
                     consume(TokenType.DE);
                     consume(TokenType.SIMPLE_TYPE);
                 } catch(SyntacticException se) {
+                    log("Invalid type for vector, got " + lat.getLexem());
                     consumeUntilSync(SyncVectors.tipus);
                 }
                 break;
@@ -381,33 +385,38 @@ public class Asi {
         try {
             consume(TokenType.IDENTIFIER);
         } catch(SyntacticException se) {
+            log("Missing name in function declaration");
             consumeUntilSync(SyncVectors.decFunc_id);
         }
         try {
             consume(TokenType.PARENTHESIS_OPEN);
-
         } catch(SyntacticException se) {
+            log("Unbalanced parenthesis in function declaration");
             consumeUntilSync(SyncVectors.decFunc_parenthesis_open);
         }
         llistaParam();
         try {
             consume(TokenType.PARENTHESIS_CLOSE);
         } catch(SyntacticException se) {
+            log("Unbalanced parenthesis in function declaration");
             consumeUntilSync(SyncVectors.decFunc_parenthesis_close);
         }
         try {
             consume(TokenType.RETURN_TYPE_PREFIX);
         } catch(SyntacticException se) {
+            log("Missing ':' before function return type");
             consumeUntilSync(SyncVectors.decFunc_ret_pref);
         }
         try {
             consume(TokenType.SIMPLE_TYPE);
         } catch(SyntacticException se) {
+            log("Unrecognised return type in function declaration");
             consumeUntilSync(SyncVectors.decFunc_ret_type);
         }
         try {
             consume(TokenType.BRACKETS_OPEN);
         } catch(SyntacticException se) {
+            log("Unbalanced brackets around function body");
             consumeUntilSync(SyncVectors.decFunc_open_brackets);
         }
         llistaDecVar();
@@ -415,11 +424,13 @@ public class Asi {
         try {
             consume(TokenType.BRACKETS_CLOSE);
         } catch(SyntacticException se) {
+            log("Unbalanced brackets around function body");
             consumeUntilSync(SyncVectors.decFunc_close_brackets);
         }
         try {
             consume(TokenType.STATEMENT_SEPARATOR);
         } catch(SyntacticException se) {
+            log("Missing ';' at the end of function declaration");
             consumeUntilSync(SyncVectors.decFunc);
         }
 
@@ -434,6 +445,7 @@ public class Asi {
                 try {
                     consume(TokenType.IDENTIFIER);
                 } catch(SyntacticException se) {
+                    log("Missing identifier for function parameter, got " + lat.getLexem());
                     consumeUntilSync(SyncVectors.decFunc_params);
                 }
                 llistaParamAux();
@@ -469,6 +481,7 @@ public class Asi {
         try {
             consume(TokenType.STATEMENT_SEPARATOR);
         } catch(SyntacticException se) {
+            log("Missing ; at the end of instruction");
             consumeUntilSync(SyncVectors.llista_inst);
         }
         llistaInstAux();
@@ -482,6 +495,7 @@ public class Asi {
                 try {
                     consume(TokenType.FINS);
                 } catch(SyntacticException se) {
+                    log("Missing FINS keyword in REPETIR loop");
                     consumeUntilSync(SyncVectors.inst_repetir);
                 }
                 exp();
@@ -492,12 +506,14 @@ public class Asi {
                 try {
                     consume(TokenType.FER);
                 } catch(SyntacticException se) {
+                    log("Missing FER keyword in MENTRE loop");
                     consumeUntilSync(SyncVectors.inst_mentre);
                 }
                 llistaInst();
                 try {
                     consume(TokenType.FIMENTRE);
                 } catch(SyntacticException se) {
+                    log("Missing FIMENTRE keyword in MENTRE loop");
                     consumeUntilSync(SyncVectors.inst_fimentre);
                 }
                 break;
@@ -507,6 +523,7 @@ public class Asi {
                 try {
                     consume(TokenType.LLAVORS);
                 } catch(SyntacticException se) {
+                    log("Missing LLAVORS preceding conditional clause body");
                     consumeUntilSync(SyncVectors.inst_si);
                 }
                 llistaInst();
@@ -514,6 +531,7 @@ public class Asi {
                 try {
                     consume(TokenType.FISI);
                 } catch(SyntacticException se) {
+                    log("Miising FISI keyword delimiting conditional clause");
                     consumeUntilSync(SyncVectors.inst_fisi);
                 }
                 break;
@@ -522,8 +540,8 @@ public class Asi {
                 try {
                     consume(TokenType.ASSIGNMENT);
                 } catch(SyntacticException se) {
+                    log("Identifier as beginning of non assignment instruction");
                     consumeUntilSync(SyncVectors.inst_id);
-                    //mby this error should be something like dude this aint an assignment which inst did u intend to do here?
                 }
                 exp();
                 break;
@@ -532,12 +550,14 @@ public class Asi {
                 try {
                     consume(TokenType.PARENTHESIS_OPEN);
                 } catch(SyntacticException se) {
+                    log("Unbalanced parenthesis in ESCRIURE");
                     consumeUntilSync(SyncVectors.inst_escriure_par_open);
                 }
                 llistaExpNonEmpty();
                 try {
                     consume(TokenType.PARENTHESIS_CLOSE);
                 } catch(SyntacticException se) {
+                    log("Unbalanced parenthesis in ESCRIURE");
                     consumeUntilSync(SyncVectors.inst_escriure);
                 }
                 break;
@@ -546,12 +566,14 @@ public class Asi {
                 try {
                     consume(TokenType.PARENTHESIS_OPEN);
                 } catch(SyntacticException se) {
+                    log("Unbalanced parenthesis in LLEGIR");
                     consumeUntilSync(SyncVectors.inst_llegir_par_open);
                 }
                 llistaVar();
                 try {
                     consume(TokenType.PARENTHESIS_CLOSE);
                 } catch(SyntacticException se) {
+                    log("Unbalanced parenthesis in LLEGIR");
                     consumeUntilSync(SyncVectors.inst_llegir);
                 }
                 break;
@@ -560,6 +582,7 @@ public class Asi {
                 exp();
                 break;
             default:
+                log("Invalid instruction");
                 consumeUntilSync(SyncVectors.llista_inst);
                 //throw(ExceptionFactory.inst(lat.getType()));
         }

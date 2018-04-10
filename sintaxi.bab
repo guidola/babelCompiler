@@ -3,9 +3,9 @@ inici
     n =0;
     usuari = 0;
     i=0;
-    mentre i !< NUM  fer
+    mentree i < NUM  fer
         llegir(usuari);
-        n = n + usuari;
-        i = i + 1;
+        n = n ;a usuari;
+        i = i + 1
     fimentre;
 fi
