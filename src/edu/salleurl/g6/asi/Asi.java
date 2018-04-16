@@ -119,7 +119,7 @@ public class Asi {
                 try {
                     consume(TokenType.IDENTIFIER);
                 } catch (SyntacticException se) {
-                    log("Missing identifier in variable declaration");
+                    log("Missing variable name in variable declaration");
                     consumeUntilSync(SyncVectors.decVarRightSide);
                 }
                 try {
@@ -190,7 +190,7 @@ public class Asi {
                 }
                 break;
             default:
-                log("Can't use " + lat.getLexem() + " as factor in expression");
+                log("Can't use " + lat.getLexem() + " as operand in expression");
                 consumeUntilSync(SyncVectors.factor);
                 //throw(ExceptionFactory.factor(lat.getType()));
         }
@@ -215,14 +215,14 @@ public class Asi {
 
     private void isVector() throws SyntacticException {
         switch (lat.getType()){
-            case BRACKETS_OPEN:
-                consume(TokenType.BRACKETS_OPEN);
+            case SQUARE_BRACKETS_OPEN:
+                consume(TokenType.SQUARE_BRACKETS_OPEN);
                 exp();
                 try {
-                    consume(TokenType.BRACKETS_CLOSE);
+                    consume(TokenType.SQUARE_BRACKETS_CLOSE);
                 } catch(SyntacticException se) {
                     log("Missing closing bracket in subscript");
-                    consumeUntilSync(SyncVectors.factor);
+                    consumeUntilSync(SyncVectors.is_vector);
                 }
                 break;
             default:
@@ -337,7 +337,7 @@ public class Asi {
             case VECTOR:
                 consume(TokenType.VECTOR);
                 try {
-                    consume(TokenType.BRACKETS_OPEN);
+                    consume(TokenType.SQUARE_BRACKETS_OPEN);
                 } catch(SyntacticException se) {
                     log("Unbalanced brackets in vector declaration");
                     consumeUntilSync(SyncVectors.vector_brackets_open);
@@ -349,7 +349,7 @@ public class Asi {
                     consumeUntilSync(SyncVectors.vector_subscript);
                 }
                 try {
-                    consume(TokenType.BRACKETS_CLOSE);
+                    consume(TokenType.SQUARE_BRACKETS_CLOSE);
                 } catch(SyntacticException se) {
                     log("Unbalanced brackets in vector declaration");
                     consumeUntilSync(SyncVectors.vector_brackets_close);
@@ -357,6 +357,11 @@ public class Asi {
 
                 try {
                     consume(TokenType.DE);
+                } catch(SyntacticException se) {
+                    log("Missing 'de' prefix before type in vector declaration, got " + lat.getLexem() + " instead");
+                    consumeUntilSync(SyncVectors.tipus_prefix);
+                }
+                try {
                     consume(TokenType.SIMPLE_TYPE);
                 } catch(SyntacticException se) {
                     log("Invalid type for vector, got " + lat.getLexem());
@@ -539,11 +544,11 @@ public class Asi {
                 variable();
                 try {
                     consume(TokenType.ASSIGNMENT);
+                    exp();
                 } catch(SyntacticException se) {
                     log("Identifier as beginning of non assignment instruction");
                     consumeUntilSync(SyncVectors.inst_id);
                 }
-                exp();
                 break;
             case ESCRIURE:
                 consume(TokenType.ESCRIURE);

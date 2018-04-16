@@ -56,8 +56,9 @@ public interface SyncVectors {
     TokenType[] vector_subscript = {TokenType.BRACKETS_CLOSE, TokenType.DE, TokenType.SIMPLE_TYPE,
             TokenType.STATEMENT_SEPARATOR, TokenType.PARENTHESIS_CLOSE, TokenType.EOF, TokenType.FI};
     TokenType[] vector_brackets_close = {TokenType.DE, TokenType.SIMPLE_TYPE,
-            TokenType.STATEMENT_SEPARATOR, TokenType.PARENTHESIS_CLOSE, TokenType.EOF, TokenType.FI};
+            TokenType.STATEMENT_SEPARATOR, TokenType.EOF, TokenType.FI};
     TokenType[] tipus = {TokenType.STATEMENT_SEPARATOR, TokenType.PARENTHESIS_CLOSE, TokenType.EOF, TokenType.FI};
+    TokenType[] tipus_prefix = {TokenType.SIMPLE_TYPE, TokenType.STATEMENT_SEPARATOR, TokenType.PARENTHESIS_CLOSE, TokenType.EOF, TokenType.FI};
 
     //--> 21 [FIRST(llista_termes)] [EOF]| FIRST(llista_termes)={SAO OR CTE_ENTERA CTE_LOGICA CTE_CADENA ID (}
     TokenType[] exp = {TokenType.SIMPLE_ARITHMETIC_OPERATOR, TokenType.NOT, TokenType.INTEGER_CONSTANT,
@@ -82,7 +83,10 @@ public interface SyncVectors {
             TokenType.ARGUMENT_SEPARATOR, TokenType.FER, TokenType.LLAVORS, TokenType.EOF, TokenType.FI};
 
     //--> 42 [ ] ] [EOF]
-    TokenType[] is_vector= {TokenType.SQUARE_BRACKETS_CLOSE, TokenType.EOF, TokenType.FI};
+    TokenType[] is_vector= {TokenType.ASSIGNMENT, TokenType.COMPLEX_ARITHMETIC_OPERATOR, TokenType.AND,
+            TokenType.SIMPLE_ARITHMETIC_OPERATOR, TokenType.OR, TokenType.RELATIONAL_OPERATOR,
+            TokenType.STATEMENT_SEPARATOR, TokenType.PARENTHESIS_CLOSE, TokenType.SQUARE_BRACKETS_CLOSE,
+            TokenType.ARGUMENT_SEPARATOR, TokenType.FER, TokenType.LLAVORS, TokenType.EOF, TokenType.FI};
 
     //--> 49 [FIRST(llista_inst_aux)] [ ; EOF] | FIRST(llista_inst_aux)={ ID ESCRIURE LLEGIR REPETIR MENTRE SI RETORNAR}
     TokenType[] llista_inst = {TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
