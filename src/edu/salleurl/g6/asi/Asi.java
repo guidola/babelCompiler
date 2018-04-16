@@ -69,6 +69,7 @@ public class Asi {
 
     private void log(String text) {
         System.err.println("[ERROR] line " + Alex.getLine() + ". " + text);
+        Alex.getLog().writeError("[ERROR_SIN] line " + Alex.getLine() + ", " + text);
     }
 
     public void programa() throws SyntacticException {
@@ -95,7 +96,9 @@ public class Asi {
         try {
             consume(TokenType.EOF);
         } catch(SyntacticException se) {
-            log("Instructions not allowed after program body. There shall not be any code after FI found " + lat.getLexem());
+            log("Instructions not allowed after program body. There shall not be any code after FI found code " +
+                    "segment beginning with " + lat.getLexem());
+            consumeUntilSync(SyncVectors.eof);
         }
 
 

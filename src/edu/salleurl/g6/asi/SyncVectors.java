@@ -148,4 +148,6 @@ public interface SyncVectors {
     TokenType[] inst_fisi = {TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
             TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.STATEMENT_SEPARATOR, TokenType.EOF, TokenType.FI};
 
+    TokenType[] eof = {TokenType.EOF};
+
 }

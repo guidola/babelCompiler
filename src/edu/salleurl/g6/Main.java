@@ -1,5 +1,7 @@
 package edu.salleurl.g6;
 
+import edu.salleurl.g6.alex.Alex;
+
 public class Main {
 
     public static void main(String[] args) {
@@ -11,7 +13,7 @@ public class Main {
         }
 
         c.analyze(args[0]);
-
+        Alex.commit();
 
     }
 }

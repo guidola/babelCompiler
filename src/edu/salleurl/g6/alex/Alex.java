@@ -59,6 +59,10 @@ public class Alex {
         alex = new Alex(filename);
     }
 
+    public static void commit() {
+        log.close();
+    }
+
     public static Alex getInstance() throws Exception {
         if (alex == null) {
             throw new Exception("Failed to get an alex instance since it has not been initialized");
@@ -108,6 +112,10 @@ public class Alex {
         
         return __handleLexInput();
         
+    }
+
+    public static LexOutputGenerator getLog() {
+        return log;
     }
 
     public static int nextChar(int line, char c) {
