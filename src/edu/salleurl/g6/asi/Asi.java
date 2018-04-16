@@ -38,15 +38,34 @@ public class Asi {
 
     }
 
-    private void waitForIniciToBeReady() {
+    private void waitForTokenToBeReady(TokenType tt) {
         while(true) {
-            lat = Alex.getToken();
-            if (TokenType.INICI == lat.getType() || TokenType.EOF == lat.getType()) {
+            if (tt == lat.getType() || TokenType.EOF == lat.getType()) {
                 return;
             }
-
+            lat = Alex.getToken();
         }
     }
+
+    private boolean waitForTokenToBeReadyOrSync(TokenType tt, TokenType[] ts) {
+        boolean iterated = false;
+        while(true) {
+
+            if (tt == lat.getType() || TokenType.EOF == lat.getType()) {
+                return iterated;
+            }
+            for(TokenType t : ts) {
+
+                if (t == lat.getType()) {
+                    return iterated;
+                }
+            }
+            lat = Alex.getToken();
+            iterated = true;
+        }
+    }
+
+
 
     private void log(String text) {
         System.err.println("[ERROR] line " + Alex.getLine() + ". " + text);
@@ -56,7 +75,7 @@ public class Asi {
         llistaDecVar();
         llistaDecFunc();
 
-        //waitForIniciToBeReady();
+        waitForTokenToBeReady(TokenType.INICI);
         try {
             consume(TokenType.INICI);
         } catch(SyntacticException se) {
@@ -71,6 +90,12 @@ public class Asi {
         } catch(SyntacticException se) {
             log("Main routine does not end. Expected FI and got " + lat.getType() + "instead");
             consumeUntilSync(SyncVectors.fi);
+        }
+
+        try {
+            consume(TokenType.EOF);
+        } catch(SyntacticException se) {
+            log("Instructions not allowed after program body. There shall not be any code after FI found " + lat.getLexem());
         }
 
 
@@ -482,14 +507,29 @@ public class Asi {
     }
 
     private void llistaInst() throws SyntacticException {
-        inst();
-        try {
-            consume(TokenType.STATEMENT_SEPARATOR);
-        } catch(SyntacticException se) {
-            log("Missing ; at the end of instruction");
-            consumeUntilSync(SyncVectors.llista_inst);
+
+        switch(lat.getType()) {
+            case REPETIR:
+            case MENTRE:
+            case SI:
+            case IDENTIFIER:
+            case ESCRIURE:
+            case LLEGIR:
+            case RETORNAR:
+                inst();
+                try {
+                    consume(TokenType.STATEMENT_SEPARATOR);
+                } catch(SyntacticException se) {
+                    log("Missing ; at the end of instruction");
+                    consumeUntilSync(SyncVectors.llista_inst);
+                }
+                llistaInstAux();
+                break;
+            default:
+                log("Body cannot be empty. There must be at least one instruction in the scope");
         }
-        llistaInstAux();
+
+
     }
 
     private void inst() throws SyntacticException {
@@ -497,6 +537,9 @@ public class Asi {
             case REPETIR:
                 consume(TokenType.REPETIR);
                 llistaInst();
+                if(waitForTokenToBeReadyOrSync(TokenType.FINS, SyncVectors.inst_repetir)) {
+                    log("Invalid instruction before FINS");
+                }
                 try {
                     consume(TokenType.FINS);
                 } catch(SyntacticException se) {
@@ -508,6 +551,9 @@ public class Asi {
             case MENTRE:
                 consume(TokenType.MENTRE);
                 exp();
+                if(waitForTokenToBeReadyOrSync(TokenType.FER, SyncVectors.inst_mentre_wait)){
+                    log("Invalid expression before FER");
+                }
                 try {
                     consume(TokenType.FER);
                 } catch(SyntacticException se) {
@@ -525,6 +571,9 @@ public class Asi {
             case SI:
                 consume(TokenType.SI);
                 exp();
+                if(waitForTokenToBeReadyOrSync(TokenType.LLAVORS, SyncVectors.inst_si_wait)){
+                    log("Invalid expression before LLAVORS");
+                }
                 try {
                     consume(TokenType.LLAVORS);
                 } catch(SyntacticException se) {
@@ -532,6 +581,9 @@ public class Asi {
                     consumeUntilSync(SyncVectors.inst_si);
                 }
                 llistaInst();
+                if(waitForTokenToBeReadyOrSync(TokenType.SINO, SyncVectors.inst_sino)){
+                    log("Invalid instruction before SINO");
+                }
                 hasSino();
                 try {
                     consume(TokenType.FISI);
@@ -546,7 +598,7 @@ public class Asi {
                     consume(TokenType.ASSIGNMENT);
                     exp();
                 } catch(SyntacticException se) {
-                    log("Identifier as beginning of non assignment instruction");
+                    log("Variable being used for non assignment instruction");
                     consumeUntilSync(SyncVectors.inst_id);
                 }
                 break;

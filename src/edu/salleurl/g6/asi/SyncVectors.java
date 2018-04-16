@@ -38,7 +38,7 @@ public interface SyncVectors {
             TokenType.AMPERSAND, TokenType.IDENTIFIER, TokenType.PARENTHESIS_CLOSE, TokenType.RETURN_TYPE_PREFIX,
             TokenType.SIMPLE_TYPE, TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,TokenType.STATEMENT_SEPARATOR,
             TokenType.FUNCIO, TokenType.INICI, TokenType.EOF, TokenType.FI};
-    TokenType[] decFunc_parenthesis_close = {TokenType.RETURN_TYPE_PREFIX, TokenType.SIMPLE_TYPE,
+    TokenType[] decFunc_parenthesis_close = {TokenType.RETURN_TYPE_PREFIX,
             TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO,
             TokenType.INICI, TokenType.EOF, TokenType.FI};
     TokenType[] decFunc_ret_pref = {TokenType.SIMPLE_TYPE, TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,
@@ -91,13 +91,12 @@ public interface SyncVectors {
     //--> 49 [FIRST(llista_inst_aux)] [ ; EOF] | FIRST(llista_inst_aux)={ ID ESCRIURE LLEGIR REPETIR MENTRE SI RETORNAR}
     TokenType[] llista_inst = {TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
             TokenType.MENTRE, TokenType.SINO, TokenType.FISI, TokenType.FIMENTRE, TokenType.FINS,
-            TokenType.BRACKETS_CLOSE, TokenType.SI, TokenType.RETORNAR, TokenType.STATEMENT_SEPARATOR, TokenType.EOF,
+            TokenType.BRACKETS_CLOSE, TokenType.SI, TokenType.RETORNAR, TokenType.EOF,
             TokenType.FI};
 
     //--> 52 [FIRST(EXP)] [ ; } EOF] | FIRST(exp)={ DEFINITS PREVIAMENT }
-    TokenType[] inst_id = {TokenType.SIMPLE_ARITHMETIC_OPERATOR, TokenType.NOT, TokenType.INTEGER_CONSTANT,
-            TokenType.LOGIC_CONSTANT, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
-            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.PARENTHESIS_OPEN, TokenType.STATEMENT_SEPARATOR,
+    TokenType[] inst_id = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.STATEMENT_SEPARATOR,
             TokenType.BRACKETS_CLOSE, TokenType.EOF, TokenType.FI};
 
     //--> 53 [FIRST(llista_exp_non_empty) ) ] [ ;  EOF] | FIRST(llista_exp_non_empty)=FIRST(exp)={ DEFINITS PREVIAMENT }
@@ -122,12 +121,18 @@ public interface SyncVectors {
             TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.SIMPLE_ARITHMETIC_OPERATOR, TokenType.NOT, TokenType.INTEGER_CONSTANT,
             TokenType.LOGIC_CONSTANT, TokenType.STRING, TokenType.PARENTHESIS_OPEN,
             TokenType.STATEMENT_SEPARATOR, TokenType.EOF, TokenType.FI};
+    TokenType[] inst_repetir_wait = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.STATEMENT_SEPARATOR, TokenType.EOF, TokenType.FI};
 
     //--> 59 [FIRST(llista_inst) fimentre first(exp)] [ ;  EOF] |
-    TokenType[] inst_mentre = {TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+    TokenType[] inst_mentre = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
             TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.FER, TokenType.SIMPLE_ARITHMETIC_OPERATOR, TokenType.NOT, TokenType.INTEGER_CONSTANT,
             TokenType.LOGIC_CONSTANT, TokenType.STRING, TokenType.IDENTIFIER, TokenType.PARENTHESIS_OPEN, TokenType.FIMENTRE, TokenType.STATEMENT_SEPARATOR,
             TokenType.EOF, TokenType.FI};
+    TokenType[] inst_mentre_wait = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.FER, TokenType.FIMENTRE, TokenType.STATEMENT_SEPARATOR,
+            TokenType.EOF, TokenType.FI};
+
     TokenType[] inst_fimentre = {TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
             TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.STATEMENT_SEPARATOR,
             TokenType.EOF, TokenType.FI};
@@ -136,6 +141,10 @@ public interface SyncVectors {
     TokenType[] inst_si = {TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
             TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.FISI, TokenType.SINO,
             TokenType.STATEMENT_SEPARATOR, TokenType.EOF, TokenType.FI};
+    TokenType[] inst_si_wait = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.FISI, TokenType.SINO, TokenType.EOF, TokenType.FI};
+    TokenType[] inst_sino = {TokenType.IDENTIFIER, TokenType.FISI, TokenType.ESCRIURE, TokenType.IDENTIFIER, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.STATEMENT_SEPARATOR, TokenType.EOF, TokenType.FI};
     TokenType[] inst_fisi = {TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
             TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.STATEMENT_SEPARATOR, TokenType.EOF, TokenType.FI};
 
