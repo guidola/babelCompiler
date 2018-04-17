@@ -1,5 +1,6 @@
 package edu.salleurl.g6.asi;
 
+import com.sun.corba.se.impl.orbutil.concurrent.Sync;
 import edu.salleurl.g6.alex.Alex;
 import edu.salleurl.g6.model.*;
 
@@ -32,6 +33,8 @@ public class Asi {
                 if (t == lat.getType()) {
                     return;
                 }
+
+
             }
             lat = Alex.getToken();
         }
@@ -76,7 +79,7 @@ public class Asi {
         llistaDecVar();
         llistaDecFunc();
 
-        waitForTokenToBeReady(TokenType.INICI);
+        waitForTokenToBeReadyOrSync(TokenType.INICI, SyncVectors.inici);
         try {
             consume(TokenType.INICI);
         } catch(SyntacticException se) {
@@ -409,21 +412,38 @@ public class Asi {
 
     private void llistaDecFunc() throws SyntacticException {
         switch (lat.getType()){
+            case IDENTIFIER:
+                //probably is a function declaration badly typed if it is not inici
             case FUNCIO:
                 decFunc();
                 llistaDecFunc();
+                break;
             default:
                     break;
         }
     }
 
     private void decFunc() throws SyntacticException {
-        consume(TokenType.FUNCIO);
+        try {
+            consume(TokenType.FUNCIO);
+        } catch(SyntacticException se) {
+            log("FUNCIO keyword may be missing or misspelled on function declaration");
+            consumeUntilSync(SyncVectors.decFuncFUNCIO);
+        }
+        if (!(lat.getType() == TokenType.IDENTIFIER || lat.getType() == TokenType.PARENTHESIS_OPEN ||
+                lat.getType() == TokenType.BRACKETS_OPEN)) {
+            return;
+        }
         try {
             consume(TokenType.IDENTIFIER);
         } catch(SyntacticException se) {
             log("Missing name in function declaration");
             consumeUntilSync(SyncVectors.decFunc_id);
+        }
+        if (lat.getType() == TokenType.IDENTIFIER){
+            // funcio was badly typed so the funcioo was taken as id
+            // hence we gotta skip this id since it would be the real one
+            lat = Alex.getToken();
         }
         try {
             consume(TokenType.PARENTHESIS_OPEN);

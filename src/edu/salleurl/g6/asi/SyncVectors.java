@@ -1,6 +1,5 @@
 package edu.salleurl.g6.asi;
 
-import edu.salleurl.g6.model.Token;
 import edu.salleurl.g6.model.TokenType;
 
 public interface SyncVectors {
@@ -8,44 +7,57 @@ public interface SyncVectors {
             TokenType.LOGIC_CONSTANT, TokenType.STRING, TokenType.IDENTIFIER, TokenType.PARENTHESIS_OPEN};
 
     //--> 1 [EOF]
-    TokenType[] inici = {TokenType.FI, TokenType.EOF};
+    TokenType[] inici = {TokenType.CONST, TokenType.VECTOR, TokenType.SIMPLE_TYPE, TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.FI, TokenType.EOF};
 
     //--> 1 [EOF]
     TokenType[] fi = {TokenType.EOF};
 
     //--> 7-8 [= FIRST(exp) ; ] [CONST TIPUS FIRST(dec_func) INICI EOF]
-    TokenType[] decVarLeftSide = {TokenType.ASSIGNMENT, TokenType.STATEMENT_SEPARATOR, TokenType.SIMPLE_ARITHMETIC_OPERATOR,
+    TokenType[] decVarLeftSide = {TokenType.CONST, TokenType.VECTOR, TokenType.SIMPLE_TYPE, TokenType.ASSIGNMENT, TokenType.STATEMENT_SEPARATOR, TokenType.SIMPLE_ARITHMETIC_OPERATOR,
             TokenType.NOT,TokenType.INTEGER_CONSTANT,TokenType.LOGIC_CONSTANT, TokenType.STRING, TokenType.IDENTIFIER,
             TokenType.PARENTHESIS_OPEN, TokenType.FUNCIO, TokenType.INICI, TokenType.EOF, TokenType.FI};
-    TokenType[] decVarRightSide = {TokenType.STATEMENT_SEPARATOR, TokenType.SIMPLE_ARITHMETIC_OPERATOR, TokenType.NOT,
+    TokenType[] decVarRightSide = {TokenType.CONST, TokenType.VECTOR, TokenType.SIMPLE_TYPE, TokenType.STATEMENT_SEPARATOR, TokenType.SIMPLE_ARITHMETIC_OPERATOR, TokenType.NOT,
             TokenType.INTEGER_CONSTANT,TokenType.LOGIC_CONSTANT, TokenType.STRING, TokenType.IDENTIFIER, TokenType.PARENTHESIS_OPEN,
             TokenType.FUNCIO, TokenType.INICI, TokenType.EOF, TokenType.FI};
-    TokenType[] decVarTerminating = {TokenType.SIMPLE_ARITHMETIC_OPERATOR, TokenType.NOT, TokenType.INTEGER_CONSTANT,
+    TokenType[] decVarTerminating = {TokenType.CONST, TokenType.VECTOR, TokenType.SIMPLE_TYPE, TokenType.SIMPLE_ARITHMETIC_OPERATOR, TokenType.NOT, TokenType.INTEGER_CONSTANT,
             TokenType.LOGIC_CONSTANT, TokenType.STRING, TokenType.IDENTIFIER, TokenType.PARENTHESIS_OPEN, TokenType.FUNCIO,
             TokenType.INICI, TokenType.EOF, TokenType.FI};
     
     
     //--> 9 [( ) : TIPUS_SIMPLE{ };] [FUNCIO INICI EOF]
-    TokenType[] decFunc_id = {TokenType.PARENTHESIS_OPEN, TokenType.SIMPLE_TYPE, TokenType.VECTOR,
+    TokenType[] decFuncFUNCIO = {TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.IDENTIFIER, TokenType.PARENTHESIS_OPEN, TokenType.SIMPLE_TYPE, TokenType.VECTOR,
+            TokenType.PARENTHESIS_CLOSE, TokenType.RETURN_TYPE_PREFIX, TokenType.SIMPLE_TYPE,
+            TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO,
+            TokenType.INICI, TokenType.EOF, TokenType.FI};
+    TokenType[] decFunc_id = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.IDENTIFIER, TokenType.PARENTHESIS_OPEN, TokenType.SIMPLE_TYPE, TokenType.VECTOR,
             TokenType.PARENTHESIS_CLOSE, TokenType.RETURN_TYPE_PREFIX, TokenType.SIMPLE_TYPE,
             TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO, 
             TokenType.INICI, TokenType.EOF, TokenType.FI};
-    TokenType[] decFunc_parenthesis_open = {TokenType.SIMPLE_TYPE, TokenType.VECTOR,
+    TokenType[] decFunc_parenthesis_open = {TokenType.IDENTIFIER, TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.SIMPLE_TYPE, TokenType.VECTOR,
             TokenType.PARENTHESIS_CLOSE, TokenType.RETURN_TYPE_PREFIX, TokenType.SIMPLE_TYPE,
             TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO,
             TokenType.INICI, TokenType.EOF, TokenType.FI};
-    TokenType[] decFunc_params = {TokenType.ARGUMENT_SEPARATOR, TokenType.VECTOR, TokenType.SIMPLE_TYPE,
+    TokenType[] decFunc_params = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.ARGUMENT_SEPARATOR, TokenType.VECTOR, TokenType.SIMPLE_TYPE,
             TokenType.AMPERSAND, TokenType.IDENTIFIER, TokenType.PARENTHESIS_CLOSE, TokenType.RETURN_TYPE_PREFIX,
             TokenType.SIMPLE_TYPE, TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,TokenType.STATEMENT_SEPARATOR,
             TokenType.FUNCIO, TokenType.INICI, TokenType.EOF, TokenType.FI};
-    TokenType[] decFunc_parenthesis_close = {TokenType.RETURN_TYPE_PREFIX,
+    TokenType[] decFunc_parenthesis_close = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.IDENTIFIER, TokenType.RETURN_TYPE_PREFIX,
             TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO,
             TokenType.INICI, TokenType.EOF, TokenType.FI};
-    TokenType[] decFunc_ret_pref = {TokenType.SIMPLE_TYPE, TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,
+    TokenType[] decFunc_ret_pref = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.IDENTIFIER, TokenType.SIMPLE_TYPE, TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,
             TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO, TokenType.INICI, TokenType.EOF, TokenType.FI};
-    TokenType[] decFunc_ret_type = {TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,
+    TokenType[] decFunc_ret_type = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.IDENTIFIER, TokenType.BRACKETS_OPEN,TokenType.BRACKETS_CLOSE,
             TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO, TokenType.INICI, TokenType.EOF, TokenType.FI};
-    TokenType[] decFunc_open_brackets = {TokenType.BRACKETS_CLOSE, TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO,
+    TokenType[] decFunc_open_brackets = {TokenType.ESCRIURE, TokenType.LLEGIR, TokenType.REPETIR,
+            TokenType.MENTRE, TokenType.SI, TokenType.RETORNAR, TokenType.IDENTIFIER, TokenType.BRACKETS_CLOSE, TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO,
             TokenType.INICI, TokenType.EOF, TokenType.FI};
     TokenType[] decFunc_close_brackets = {TokenType.STATEMENT_SEPARATOR, TokenType.FUNCIO, TokenType.INICI, TokenType.EOF, TokenType.FI};
     TokenType[] decFunc = {TokenType.FUNCIO, TokenType.INICI, TokenType.EOF, TokenType.FI};
