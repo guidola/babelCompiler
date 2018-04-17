@@ -57,7 +57,7 @@ public interface SyncVectors {
             TokenType.STATEMENT_SEPARATOR, TokenType.PARENTHESIS_CLOSE, TokenType.EOF, TokenType.FI};
     TokenType[] vector_brackets_close = {TokenType.DE, TokenType.SIMPLE_TYPE,
             TokenType.STATEMENT_SEPARATOR, TokenType.EOF, TokenType.FI};
-    TokenType[] tipus = {TokenType.STATEMENT_SEPARATOR, TokenType.PARENTHESIS_CLOSE, TokenType.EOF, TokenType.FI};
+    TokenType[] tipus = {TokenType.IDENTIFIER, TokenType.STATEMENT_SEPARATOR, TokenType.PARENTHESIS_CLOSE, TokenType.EOF, TokenType.FI};
     TokenType[] tipus_prefix = {TokenType.SIMPLE_TYPE, TokenType.STATEMENT_SEPARATOR, TokenType.PARENTHESIS_CLOSE, TokenType.EOF, TokenType.FI};
 
     //--> 21 [FIRST(llista_termes)] [EOF]| FIRST(llista_termes)={SAO OR CTE_ENTERA CTE_LOGICA CTE_CADENA ID (}

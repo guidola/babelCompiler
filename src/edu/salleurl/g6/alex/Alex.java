@@ -127,7 +127,6 @@ public class Alex {
                 if(Character.toString(c).matches(sre_whitespacesTabsAndLinejumps)) {
                     if (line == -1 ) {
                         lastToken = log.writeToken(new Token(TokenType.EOF, ""));
-                        log.close();
                         return EOF;
                     }
                     return STEP;

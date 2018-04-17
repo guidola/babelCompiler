@@ -80,7 +80,7 @@ public class Asi {
         try {
             consume(TokenType.INICI);
         } catch(SyntacticException se) {
-            log("Can't find main routine beginning. Got " + lat.getType() + "when expecting main routine INICI token");
+            log("Can't find main routine beginning (INICI)");
             consumeUntilSync(SyncVectors.inici);
         }
 
@@ -89,7 +89,7 @@ public class Asi {
         try {
             consume(TokenType.FI);
         } catch(SyntacticException se) {
-            log("Main routine does not end. Expected FI and got " + lat.getType() + "instead");
+            log("Main routine does not end. Expected FI.");
             consumeUntilSync(SyncVectors.fi);
         }
 
@@ -245,7 +245,11 @@ public class Asi {
         switch (lat.getType()){
             case SQUARE_BRACKETS_OPEN:
                 consume(TokenType.SQUARE_BRACKETS_OPEN);
-                exp();
+                if (lat.getType() != TokenType.SQUARE_BRACKETS_CLOSE) {
+                    exp();
+                } else {
+                    log("No expression provided as vector index");
+                }
                 try {
                     consume(TokenType.SQUARE_BRACKETS_CLOSE);
                 } catch(SyntacticException se) {
@@ -386,13 +390,13 @@ public class Asi {
                 try {
                     consume(TokenType.DE);
                 } catch(SyntacticException se) {
-                    log("Missing 'de' prefix before type in vector declaration, got " + lat.getLexem() + " instead");
+                    log("Missing 'de' prefix before type in vector declaration");
                     consumeUntilSync(SyncVectors.tipus_prefix);
                 }
                 try {
                     consume(TokenType.SIMPLE_TYPE);
                 } catch(SyntacticException se) {
-                    log("Invalid type for vector, got " + lat.getLexem());
+                    log("Invalid type for vector");
                     consumeUntilSync(SyncVectors.tipus);
                 }
                 break;
@@ -478,7 +482,7 @@ public class Asi {
                 try {
                     consume(TokenType.IDENTIFIER);
                 } catch(SyntacticException se) {
-                    log("Missing identifier for function parameter, got " + lat.getLexem());
+                    log("Missing identifier for function parameter");
                     consumeUntilSync(SyncVectors.decFunc_params);
                 }
                 llistaParamAux();
