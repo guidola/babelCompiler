@@ -1,43 +1,73 @@
 package edu.salleurl.g6.asi;
 
 import edu.salleurl.g6.alex.Alex;
+import edu.salleurl.g6.ase.Ase;
+import edu.salleurl.g6.ase.Semantic;
 import edu.salleurl.g6.model.*;
+import taulasimbols.*;
+
+import javax.net.ssl.SSLEngineResult;
+import java.lang.invoke.SwitchPoint;
+import java.util.Hashtable;
+import java.util.Vector;
 
 public class Asi {
-
+    private Ase ase;
     private Token lat;
+    private Semantic attr;
 
     public Asi(String filename) {
-
         Alex.init(filename);
         lat = Alex.getToken();
+        ase = new Ase();
+        attr = new Semantic();
     }
 
 
-    private  void consume(TokenType t) throws SyntacticException {
-        if(t == lat.getType()){
+    private void consume(TokenType t) throws SyntacticException {
+        if (t == lat.getType()) {
             lat = Alex.getToken();
             return;
         }
 
-        throw(ExceptionFactory.consume(t, lat.getType()));
+        throw (ExceptionFactory.consume(t, lat.getType()));
     }
 
     public void programa() throws SyntacticException {
-        llistaDecVar();
-        llistaDecFunc();
+        ase.addNewBlock();
+        llistaDecVar();//Done
+        llistaDecFunc();//Done
         consume(TokenType.INICI);
         llistaInst();
         consume(TokenType.FI);
+        consume(TokenType.EOF);
 
     }
 
     private void llistaDecVar() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case CONST:
+                Constant constant = new Constant();
+                attr.setAttributes(new Hashtable<String,Constant>());
+                attr.setValue(TokenType.CONST,constant);
+                attr = decVar(attr);
+                ase.addNewConstant((Constant) attr.getValue(TokenType.CONST));
+                llistaDecVar();
+                break;
             case SIMPLE_TYPE:
+                Variable var1 = new Variable();
+                attr.setAttributes(new Hashtable<String,Variable>());
+                attr.setValue(TokenType.SIMPLE_TYPE,var1);
+                attr = decVar(attr);
+                ase.addNewVar((Variable) attr.getValue(TokenType.SIMPLE_TYPE));
+                llistaDecVar();
+                break;
             case VECTOR:
-                decVar();
+                Variable var2 = new Variable();
+                attr.setAttributes(new Hashtable<String,Variable>());
+                attr.setValue(TokenType.VECTOR,var2);
+                attr = decVar(attr);
+                ase.addNewVar((Variable) attr.getValue(TokenType.VECTOR));
                 llistaDecVar();
                 break;
             default:
@@ -45,26 +75,51 @@ public class Asi {
         }
     }
 
-    private void decVar() throws SyntacticException {
-        switch (lat.getType()){
+    private Semantic decVar(Semantic attr) throws SyntacticException {
+        switch (lat.getType()) {
             case CONST:
+                Constant constant = (Constant) attr.getValue(TokenType.CONST);
                 consume(TokenType.CONST);
+                constant.setNom(lat.getLexem());
                 consume(TokenType.IDENTIFIER);
                 consume(TokenType.ASSIGNMENT);
-                exp();
+                constant.setValor(lat.getLexem());
+                exp();//CAOS!
+
                 consume(TokenType.STATEMENT_SEPARATOR);
+                ase.addNewConstant(constant);
+                attr.setValue(TokenType.CONST,constant);
                 break;
             case SIMPLE_TYPE:
-            case VECTOR:
-                tipus();
+                Variable var1  = (Variable) attr.getValue(TokenType.SIMPLE_TYPE);
+
+                attr.setAttributes(new Hashtable<String,TipusSimple>());
+                attr = tipus(attr);
+                var1.setTipus((TipusSimple)attr.getValue(TokenType.SIMPLE_TYPE));
+                var1.setNom(lat.getLexem());
                 consume(TokenType.IDENTIFIER);
                 consume(TokenType.STATEMENT_SEPARATOR);
+                ase.addNewVar(var1);
+                attr.setValue(TokenType.SIMPLE_TYPE,var1);
+                break;
+            case VECTOR:
+                Variable var2  = new Variable();
+                attr.setAttributes(new Hashtable<String,TipusArray>());
+                attr = tipus(attr);
+
+                var2.setTipus((TipusArray)attr.getValue(TokenType.VECTOR));
+                var2.setNom(lat.getLexem());
+
+                consume(TokenType.IDENTIFIER);
+                consume(TokenType.STATEMENT_SEPARATOR);
+                ase.addNewVar(var2);
+                attr.setValue(TokenType.VECTOR,var2);
                 break;
             default:
-                throw(ExceptionFactory.decVar(lat.getType()));
+                throw (ExceptionFactory.decVar(lat.getType()));
         }
+        return attr;
     }
-
     private void exp() throws SyntacticException {
         expSimple();
         llistaExpSimple();
@@ -77,7 +132,7 @@ public class Asi {
     }
 
     private void opu() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case SIMPLE_ARITHMETIC_OPERATOR:
                 consume(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
                 break;
@@ -92,8 +147,9 @@ public class Asi {
         factor();
         factorAux();
     }
+
     private void factor() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case INTEGER_CONSTANT:
                 consume(TokenType.INTEGER_CONSTANT);
                 break;
@@ -113,12 +169,12 @@ public class Asi {
                 consume(TokenType.PARENTHESIS_CLOSE);
                 break;
             default:
-                throw(ExceptionFactory.factor(lat.getType()));
+                throw (ExceptionFactory.factor(lat.getType()));
         }
     }
 
     private void factorIdSufix() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
                 llistaExp();
@@ -130,11 +186,11 @@ public class Asi {
     }
 
     private void isVector() throws SyntacticException {
-        switch (lat.getType()){
-            case BRACKETS_OPEN:
-                consume(TokenType.BRACKETS_OPEN);
+        switch (lat.getType()) {
+            case SQUARE_BRACKETS_OPEN:
+                consume(TokenType.SQUARE_BRACKETS_OPEN);
                 exp();
-                consume(TokenType.BRACKETS_CLOSE);
+                consume(TokenType.SQUARE_BRACKETS_CLOSE);
                 break;
             default:
                 break;
@@ -142,7 +198,7 @@ public class Asi {
     }
 
     private void llistaExp() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case SIMPLE_ARITHMETIC_OPERATOR:
             case NOT:
             case INTEGER_CONSTANT:
@@ -163,7 +219,7 @@ public class Asi {
     }
 
     private void llistaExpAux() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);
                 llistaExpNonEmpty();
@@ -174,7 +230,7 @@ public class Asi {
     }
 
     private void factorAux() throws SyntacticException {
-        switch(lat.getType()){
+        switch (lat.getType()) {
             case COMPLEX_ARITHMETIC_OPERATOR:
             case AND:
                 opb();
@@ -186,7 +242,7 @@ public class Asi {
     }
 
     private void opb() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case COMPLEX_ARITHMETIC_OPERATOR:
                 consume(TokenType.COMPLEX_ARITHMETIC_OPERATOR);
                 break;
@@ -194,12 +250,12 @@ public class Asi {
                 consume(TokenType.AND);
                 break;
             default:
-                throw(ExceptionFactory.opb(lat.getType()));
+                throw (ExceptionFactory.opb(lat.getType()));
         }
     }
 
     private void llistaTermes() throws SyntacticException {
-        switch(lat.getType()) {
+        switch (lat.getType()) {
             case SIMPLE_ARITHMETIC_OPERATOR:
             case OR:
                 ops();
@@ -208,11 +264,10 @@ public class Asi {
             default:
                 break;
         }
-
-
     }
+
     private void ops() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case SIMPLE_ARITHMETIC_OPERATOR:
                 consume(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
                 break;
@@ -220,12 +275,12 @@ public class Asi {
                 consume(TokenType.OR);
                 break;
             default:
-                throw(ExceptionFactory.ops(lat.getType()));
+                throw (ExceptionFactory.ops(lat.getType()));
         }
     }
 
     private void llistaExpSimple() throws SyntacticException {
-        switch(lat.getType()){
+        switch (lat.getType()) {
             case RELATIONAL_OPERATOR:
                 consume(TokenType.RELATIONAL_OPERATOR);
                 expSimple();
@@ -235,92 +290,175 @@ public class Asi {
         }
     }
 
-    private void tipus() throws SyntacticException {
-        switch(lat.getType()){
+    private Semantic tipus(Semantic attr) throws SyntacticException {
+        switch (lat.getType()) {
             case SIMPLE_TYPE:
+                //attr.setValue("tipus",lat.getLexem());
+                attr.setValue(TokenType.SIMPLE_TYPE,new TipusSimple(lat.getLexem(),10000));
                 consume(TokenType.SIMPLE_TYPE);
                 break;
             case VECTOR:
+                TipusArray vec = new TipusArray();
+
                 consume(TokenType.VECTOR);
-                consume(TokenType.BRACKETS_OPEN);
+                consume(TokenType.SQUARE_BRACKETS_OPEN);
+
+                vec.setTamany( Integer.parseInt(lat.getLexem()));
+
                 consume(TokenType.INTEGER_CONSTANT);
-                consume(TokenType.BRACKETS_CLOSE);
+                consume(TokenType.SQUARE_BRACKETS_CLOSE);
                 consume(TokenType.DE);
+
+                vec.setTipusElements(new TipusSimple(lat.getLexem(),10000));
+
                 consume(TokenType.SIMPLE_TYPE);
+
+                attr.setValue(TokenType.VECTOR,vec);
                 break;
             default:
-                throw(ExceptionFactory.tipus(lat.getType()));
+                throw (ExceptionFactory.tipus(lat.getType()));
         }
+        return attr;
     }
 
     private void llistaDecFunc() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
+            //case IDENTIFIER:
+                //probably is a function declaration badly typed if it is not inici
             case FUNCIO:
-                decFunc();
+                Funcio func = new Funcio();
+                attr.setAttributes(new Hashtable<String,Funcio>());
+                attr.setValue(TokenType.FUNCIO,func);
+                attr = decFunc(attr);
+                ase.addNewFuncio((Funcio)attr.getValue(TokenType.FUNCIO));
                 llistaDecFunc();
+                break;
             default:
-                    break;
+                break;
         }
     }
 
-    private void decFunc() throws SyntacticException {
+    private Semantic decFunc(Semantic attr) throws SyntacticException {
+        ase.addNewBlock();
         consume(TokenType.FUNCIO);
+        Funcio func = (Funcio) attr.getValue(TokenType.FUNCIO);
+        func.setNom(lat.getLexem());
         consume(TokenType.IDENTIFIER);
         consume(TokenType.PARENTHESIS_OPEN);
-        llistaParam();
+
+
+        attr.setValue(TokenType.FUNCIO,func);
+
+        attr = llistaParam(attr);
+
+        func = (Funcio) attr.getValue(TokenType.FUNCIO);
+
         consume(TokenType.PARENTHESIS_CLOSE);
         consume(TokenType.RETURN_TYPE_PREFIX);
+        func.setTipus(new TipusSimple(lat.getLexem(),10000));
         consume(TokenType.SIMPLE_TYPE);
         consume(TokenType.BRACKETS_OPEN);
+        ase.addNewFuncio(func);
+        //TODO SEMANTIC
         llistaDecVar();
         llistaInst();
         consume(TokenType.BRACKETS_CLOSE);
         consume(TokenType.STATEMENT_SEPARATOR);
+        ase.deleteActualBlock();
+        attr.setValue(TokenType.FUNCIO,func);
+        return attr;
     }
 
-    private void llistaParam() throws SyntacticException {
-        switch(lat.getType()){
+    private Semantic llistaParam(Semantic attr) throws SyntacticException {
+        Parametre param = new Parametre();
+        Funcio aux = (Funcio) attr.getValue(TokenType.FUNCIO);
+        switch (lat.getType()) {
             case SIMPLE_TYPE:
-            case VECTOR:
-                tipus();
-                isRef();
+                attr.setAttributes(new Hashtable<String,TipusSimple>());
+                attr = tipus(attr);
+                param.setTipus((TipusSimple)attr.getValue(TokenType.SIMPLE_TYPE));
+
+                //tipus();
+                attr.setAttributes(new Hashtable<String,TipusPasParametre>());
+                attr = isRef(attr);
+                param.setTipusPasParametre((TipusPasParametre)attr.getValue(TokenType.AMPERSAND));
+                param.setNom(lat.getLexem());
                 consume(TokenType.IDENTIFIER);
-                llistaParamAux();
+                aux.inserirParametre(param);
+
+                attr.setValue(TokenType.FUNCIO,aux);
+                attr = llistaParamAux(attr);
+                break;
+            case VECTOR:
+                attr.setAttributes(new Hashtable<String,TipusArray>());
+                attr = tipus(attr);
+                param.setTipus((TipusArray)attr.getValue(TokenType.VECTOR));
+
+                attr.setAttributes(new Hashtable<String,TipusPasParametre>());
+                attr = isRef(attr);
+                param.setTipusPasParametre((TipusPasParametre)attr.getValue(TokenType.AMPERSAND));
+                param.setNom(lat.getLexem());
+                consume(TokenType.IDENTIFIER);
+                aux.inserirParametre(param);
+                attr.setValue(TokenType.FUNCIO,aux);
+                attr = llistaParamAux(attr);
                 break;
             default:
                 break;
         }
+        attr.setValue(TokenType.FUNCIO,aux);
+        return attr;
     }
 
-    private void isRef() throws SyntacticException {
-        switch (lat.getType()){
+    private Semantic isRef(Semantic attr) throws SyntacticException {
+        switch (lat.getType()) {
             case AMPERSAND:
+                attr.setValue(TokenType.AMPERSAND,TipusPasParametre.REFERENCIA);
                 consume(TokenType.AMPERSAND);
                 break;
             default:
+                attr.setValue(TokenType.AMPERSAND,TipusPasParametre.VALOR);
                 break;
         }
+        return attr;
     }
 
-    private void llistaParamAux() throws SyntacticException {
-        switch (lat.getType()){
+    private Semantic llistaParamAux(Semantic attr) throws SyntacticException {
+        switch (lat.getType()) {
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);
-                llistaParam();
+                attr =llistaParam(attr);
                 break;
             default:
                 break;
         }
+        return attr;
     }
 
     private void llistaInst() throws SyntacticException {
-        inst();
+        /*inst();
         consume(TokenType.STATEMENT_SEPARATOR);
-        llistaInstAux();
+        llistaInstAux();*/
+        switch (lat.getType()) {
+            case REPETIR:
+            case MENTRE:
+            case SI:
+            case IDENTIFIER:
+            case ESCRIURE:
+            case LLEGIR:
+            case RETORNAR:
+                inst();
+                consume(TokenType.STATEMENT_SEPARATOR);
+                llistaInstAux();
+                break;
+            default:
+                throw (ExceptionFactory.inst(lat.getType()));
+        }
+
     }
 
     private void inst() throws SyntacticException {
-        switch(lat.getType()) {
+        switch (lat.getType()) {
             case REPETIR:
                 consume(TokenType.REPETIR);
                 llistaInst();
@@ -361,10 +499,10 @@ public class Asi {
                 break;
             case RETORNAR:
                 consume(TokenType.RETORNAR);
-                llistaInst();
+                exp();
                 break;
             default:
-                throw(ExceptionFactory.inst(lat.getType()));
+                throw (ExceptionFactory.inst(lat.getType()));
         }
     }
 
@@ -383,8 +521,9 @@ public class Asi {
                 break;
         }
     }
+
     private void hasSino() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case SINO:
                 consume(TokenType.SINO);
                 llistaInst();
@@ -405,7 +544,7 @@ public class Asi {
     }
 
     private void llistaVarAux() throws SyntacticException {
-        switch (lat.getType()){
+        switch (lat.getType()) {
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);
                 llistaVar();

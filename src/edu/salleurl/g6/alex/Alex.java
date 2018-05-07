@@ -93,7 +93,7 @@ public class Alex {
                         break;
                     case STAY_AND_GOT_TOKEN:
                         return lastToken;
-                    
+
                 }
 
             }
@@ -103,11 +103,11 @@ public class Alex {
 
         return null;
     }
-    
+
     public static Token getToken() {
-        
+
         return __handleLexInput();
-        
+
     }
 
     public static int nextChar(int line, char c) {
