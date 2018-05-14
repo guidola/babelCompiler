@@ -1,9 +1,9 @@
 //////////////////////////////////
 //	F2P1.bab	//
 //////////////////////////////////
-const CTE1 = "F2P1.bab" ;
-CONST CTE2 = ((3 - 1) * 4) / 2;
-logic  v4 ;
+//const CTE1 = "F2P1.bab" ;
+//CONST CTE2 = (2+4)/2;
+//logic  v4 ;
 const MIN = 10;
 const MAX = 50;
 const N = Max - min + 1;
