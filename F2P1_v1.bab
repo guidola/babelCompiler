@@ -1,12 +1,12 @@
 //////////////////////////////////
 //	F2P1.bab	//
 //////////////////////////////////
-//const CTE1 = "F2P1.bab" ;
-//CONST CTE2 = (2+4)/2;
-//logic  v4 ;
+const CTE1 = "F2P1.bab" ;
+CONST CTE2 = (2+4)/2;
+logic  v4 ;
 const MIN = 10;
 const MAX = 50;
-const N = Max - min + 1;
+const N = Max - min + 60;
 CoNsT CTE4 = cert AND cert;
 sencer v1;
 vector [20] de sencer v5 ;
@@ -15,21 +15,6 @@ vector [10] de logic v6 ;
 ///////////////
 // Funciones //
 ///////////////
-fUNcIO S0(): sencer 
-{	sencer i;
-
-	escriure("Starting ", CTE1);
-	i = min;
-	j = (x+2) - 3;
-	mentre cert fer
-		si i == MAX llavors   x=0;
-		sino
-			v5[i+2] = i + 1;
-			i =  m+n;
-		fisi;	
-	fimentre;
-};
-
 funcio S(sencer a1,  sencer b ): logic
 {
 	SI b == 0 llavors
