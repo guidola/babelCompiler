@@ -3,13 +3,12 @@ package edu.salleurl.g6.asi;
 import edu.salleurl.g6.alex.Alex;
 import edu.salleurl.g6.ase.Ase;
 import edu.salleurl.g6.ase.Semantic;
+import edu.salleurl.g6.gc.MIPSFactory;
+import edu.salleurl.g6.gc.OffsetFactory;
 import edu.salleurl.g6.model.*;
 import taulasimbols.*;
 
-import javax.net.ssl.SSLEngineResult;
-import java.lang.invoke.SwitchPoint;
 import java.util.Hashtable;
-import java.util.Vector;
 
 public class Asi {
     private Ase ase;
@@ -18,16 +17,19 @@ public class Asi {
 
     public Asi(String filename) {
         Alex.init(filename);
+        MIPSFactory.initAssemblyOutFile(filename);
         lat = Alex.getToken();
         ase = new Ase();
         attr = new Semantic();
     }
 
 
-    private void consume(TokenType t) throws SyntacticException {
+    private String consume(TokenType t) throws SyntacticException {
+        String lexem = lat.getLexem();
+
         if (t == lat.getType()) {
             lat = Alex.getToken();
-            return;
+            return lexem;
         }
 
         throw (ExceptionFactory.consume(t, lat.getType()));
@@ -35,200 +37,203 @@ public class Asi {
 
     public void programa() throws SyntacticException {
         ase.addNewBlock();
-        attr = llistaDecVar(attr);//Done
-        llistaDecFunc();//Done
+        OffsetFactory.reset();
+        llistaDecVar();
+        llistaDecFunc();
+        MIPSFactory.init();
         consume(TokenType.INICI);
         llistaInst();
         consume(TokenType.FI);
         consume(TokenType.EOF);
+        MIPSFactory.finish();
 
     }
 
-    private Semantic llistaDecVar(Semantic attr) throws SyntacticException {
+    private void llistaDecVar() throws SyntacticException {
         switch (lat.getType()) {
             case CONST:
-                Constant constant = new Constant();
-                attr.setAttributes(new Hashtable<String, Constant>());
-                attr.setValue(TokenType.CONST, constant);
-                attr = decVar(attr);
-                ase.addNewConstant((Constant) attr.getValue(TokenType.CONST));
-                attr = llistaDecVar(attr);
-                break;
             case SIMPLE_TYPE:
-                Variable var1 = new Variable();
-                attr.setAttributes(new Hashtable<String, Variable>());
-                attr.setValue(TokenType.SIMPLE_TYPE, var1);
-                attr = decVar(attr);
-                ase.addNewVar((Variable) attr.getValue(TokenType.SIMPLE_TYPE));
-                attr = llistaDecVar(attr);
-                break;
             case VECTOR:
-                Variable var2 = new Variable();
-                attr.setAttributes(new Hashtable<String, Variable>());
-                attr.setValue(TokenType.VECTOR, var2);
-                attr = decVar(attr);
-                ase.addNewVar((Variable) attr.getValue(TokenType.VECTOR));
-                attr = llistaDecVar(attr);
+                decVar();
+                llistaDecVar();
                 break;
             default:
                 break;
         }
-        return attr;
     }
 
-    private Semantic decVar(Semantic attr) throws SyntacticException {
+    private void decVar() throws SyntacticException {
         switch (lat.getType()) {
             case CONST:
-                Constant constant = (Constant) attr.getValue(TokenType.CONST);
                 consume(TokenType.CONST);
-                constant.setNom(lat.getLexem());
-                consume(TokenType.IDENTIFIER);
+
+                Constant constant = new Constant();
+                constant.setNom(consume(TokenType.IDENTIFIER));
                 consume(TokenType.ASSIGNMENT);
 
-                attr.setAttributes(new Hashtable<String,ITipus>());
-                attr = exp(attr);//CAOS!
-
-                if(attr.getValue("RESULT")!=null){
-                    ITipus aux = (ITipus) attr.getValue("RESULT");
-                    constant.setValor(aux.getNom());
-                    constant.setTipus((ITipus) attr.getValue("RESULT"));
-                }else if(attr.getValue("VARIABLE")!=null){
-                    ITipus aux = (ITipus) attr.getValue("VARIABLE");
-                    constant.setValor(aux.getNom());
-                    constant.setTipus((ITipus) attr.getValue("VARIABLE"));
-                }
+                Semantic exp_result = exp();
+                //TODO check that expression is estatic and did not fail to get any of the constants that may form it
+                //TODO check that the exp is of type _cadena or _simple
+                constant.setTipus(exp_result.type());
+                constant.setValor(exp_result.constValue());
 
                 consume(TokenType.STATEMENT_SEPARATOR);
                 ase.addNewConstant(constant);
-                attr.setValue(TokenType.CONST, constant);
                 break;
+
             case SIMPLE_TYPE:
-                Variable var1 = (Variable) attr.getValue(TokenType.SIMPLE_TYPE);
-
-                attr.setAttributes(new Hashtable<String, TipusSimple>());
-                attr = tipus(attr);
-                var1.setTipus((TipusSimple) attr.getValue(TokenType.SIMPLE_TYPE));
-                var1.setNom(lat.getLexem());
-                consume(TokenType.IDENTIFIER);
-                consume(TokenType.STATEMENT_SEPARATOR);
-                ase.addNewVar(var1);
-                attr.setValue(TokenType.SIMPLE_TYPE, var1);
-                break;
             case VECTOR:
-                Variable var2 = new Variable();
-                attr.setAttributes(new Hashtable<String, TipusArray>());
-                attr = tipus(attr);
 
-                var2.setTipus((TipusArray) attr.getValue(TokenType.VECTOR));
-                var2.setNom(lat.getLexem());
-
-                consume(TokenType.IDENTIFIER);
+                Variable var = new Variable();
+                var.setTipus(tipus());
+                var.setNom(consume(TokenType.IDENTIFIER));
+                var.setDesplacament(OffsetFactory.nextOffset(var.getTipus().getTamany()));
                 consume(TokenType.STATEMENT_SEPARATOR);
-                ase.addNewVar(var2);
-                attr.setValue(TokenType.VECTOR, var2);
+                ase.addNewVar(var);
                 break;
+
             default:
                 throw (ExceptionFactory.decVar(lat.getType()));
         }
-        return attr;
     }
 
-    private Semantic exp(Semantic attr) throws SyntacticException {
-        attr = expSimple(attr);
-        llistaExpSimple();
-        return attr;
+    private Semantic exp() throws SyntacticException {
+        Semantic left_side_exp = expSimple();
+        return llistaExpSimple(left_side_exp);
     }
 
-    private Semantic expSimple(Semantic attr) throws SyntacticException {
+    private Semantic expSimple() throws SyntacticException {
 
-        attr = opu(attr);
-        String op = (String) attr.getValue("OPU");
-        attr = terme(attr);
+        Semantic operator = opu();
+        Semantic operand = terme(new Semantic());
 
-        //TODO APLICAR OPU AL TERME EN VARIABLE
-        attr = llistaTermes(attr);
+        Semantic result = operator.performUnaryOperation(operand);
 
-        //System.out.println("TERME READY!--> "+(TipusSimple)attr.getValue("VAR2").getNom());
-        return attr;
+        //perform the rest of the exp_simple and return the resultant _Semantic
+        return llistaTermes(result);
     }
 
-    private Semantic opu(Semantic attr) throws SyntacticException {
+    private Semantic opu() throws SyntacticException {
+
+        Semantic opu = new Semantic();
+
         switch (lat.getType()) {
             case SIMPLE_ARITHMETIC_OPERATOR:
-                attr.setValue("OPU",lat.getLexem());
-                consume(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
+                opu.setUOperator(consume(TokenType.SIMPLE_ARITHMETIC_OPERATOR));
                 break;
             case NOT:
-                attr.setValue("OPU",lat.getLexem());
-                consume(TokenType.NOT);
+                opu.setUOperator(consume(TokenType.NOT));
+                break;
             default:
-                //attr.setValue("OPU","null");
                 break;
         }
-        return attr;
+        return opu;
     }
 
-    private Semantic terme(Semantic attr) throws SyntacticException {
-        attr = factor(attr);
-        attr = ase.identifyTerm(attr);
-        attr =factorAux(attr);
-        return attr;
+    private Semantic terme(Semantic acumm_exp) throws SyntacticException {
+        // a term call may receive a semantic class without operator if it is the first call to term on that exp
+        // or receive a operator and an accumulated result if it is a recursive call inside the expression.
+        // since association is left-wise we operate downwards hence the operation must be performed before
+        // the recursive call to obtain the proper result
+        Semantic operand = factor(acumm_exp);
+        return factorAux(acumm_exp.performBinaryOperation(operand));
+        /* RETURN:  result holds a _reg with either the register where operand1 is held
+                    or the result of the  operation or if isEstatic then it holds the numeric value of operand1
+         */
     }
 
     private Semantic factor(Semantic attr) throws SyntacticException {
+
+        Semantic factor = new Semantic();
+
         switch (lat.getType()) {
             case INTEGER_CONSTANT:
-                attr.setValue(TokenType.INTEGER_CONSTANT, lat.getLexem());
-                consume(TokenType.INTEGER_CONSTANT);
+                factor.setEstatic(true);
+                factor.setType(new TipusSimple(Ase.TIPUS_SIMPLE, MIPSFactory.TIPUS_SIMPLE_SIZE));
+                factor.setValue(Integer.parseInt(consume(TokenType.INTEGER_CONSTANT)));
+                //TODO validate that size of integer constant fits in 32bit ca2 register
                 break;
             case LOGIC_CONSTANT:
-                attr.setValue(TokenType.LOGIC_CONSTANT, lat.getLexem());
-                consume(TokenType.LOGIC_CONSTANT);
+                factor.setEstatic(true);
+                factor.setType(new TipusSimple(Ase.TIPUS_LOGIC, MIPSFactory.TIPUS_LOGIC_SIZE));
+                String logic_ct = consume(TokenType.LOGIC_CONSTANT);
+                //TODO validate logic ct is one of the 2 valid options
+                factor.setValue( logic_ct.equals(Ase.CERT) ? MIPSFactory.CERT : MIPSFactory.FALS );
+
                 break;
             case STRING:
-                attr.setValue(TokenType.STRING, lat.getLexem());
-                consume(TokenType.STRING);
+                // a string cannot be operated with and hence a exp containing a string as factor can only be a single
+                // factor expression, ergo define string in assembly and return label to refer to in print operations
+                factor.setEstatic(true);
+                factor.setType(new TipusCadena());
+                attr.setTag(MIPSFactory.defineString(consume(TokenType.STRING)));
+
                 break;
             case IDENTIFIER:
-                attr.setValue(TokenType.IDENTIFIER, lat.getLexem());
-                consume(TokenType.IDENTIFIER);
-                attr = factorIdSufix(attr);
+                String id = consume(TokenType.IDENTIFIER);
+                factor = factorIdSufix(id);
                 break;
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
-                attr = exp(attr);
+                factor = exp();
                 consume(TokenType.PARENTHESIS_CLOSE);
                 break;
             default:
                 throw (ExceptionFactory.factor(lat.getType()));
         }
-        return attr;
+
+
+        return factor;
     }
 
-    private Semantic factorIdSufix(Semantic attr) throws SyntacticException {
+    private Semantic factorIdSufix(String id) throws SyntacticException {
         switch (lat.getType()) {
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
-                attr = llistaExp(attr);
+                //TODO recover and pass to llistaExp the parameter definition for the func with id _id
+                Semantic parameters = llistaExp(attr); //TODO follow this call line and implement ase & mips stuff
                 consume(TokenType.PARENTHESIS_CLOSE);
-                break;
+                //TODO write all operations to call the func with _parameters if not_empty
+                return parameters;
             default:
-                attr = isVector(attr);
+                return isVector(id, Ase.LOAD);
         }
-        return  attr;
     }
 
-    private Semantic isVector(Semantic attr) throws SyntacticException {
+    private Semantic isVector(String id, boolean isStore) throws SyntacticException {
+
+        Semantic variable;
+
         switch (lat.getType()) {
             case SQUARE_BRACKETS_OPEN:
                 consume(TokenType.SQUARE_BRACKETS_OPEN);
-                attr = exp(attr);
+                Semantic expression = exp();
                 consume(TokenType.SQUARE_BRACKETS_CLOSE);
+
+                if(isStore) {
+                    variable = ase.validateArrayAccessAndGetOffset(id, expression);
+                } else {
+                    variable = ase.validateArrayAccessAndLoadCell(id, expression);
+                }
                 break;
+
             default:
+                variable = ase.getVariableOrConstant(id);
+                variable.isVector(false);
+                if(variable.isEstatic()){
+                    //TODO prompt error if variable is CONST and we are doing a STORE action
+                    if(variable.isString()) {
+                        variable.setTag(MIPSFactory.defineString(variable.strValue()));
+                    }
+                } else {
+                    if(!isStore) {
+                        variable.setRegister(MIPSFactory.loadVariable(variable.offset(), variable.isGlobal()));
+                    }
+                }
                 break;
         }
-        return attr;
+
+        return variable;
     }
 
     private Semantic llistaExp(Semantic attr) throws SyntacticException {
@@ -249,7 +254,7 @@ public class Asi {
     }
 
     private Semantic llistaExpNonEmpty(Semantic attr) throws SyntacticException {
-        attr = exp(attr);
+        attr = exp();
         attr = llistaExpAux(attr);
         return attr;
     }
@@ -266,129 +271,100 @@ public class Asi {
         return attr;
     }
 
-    private Semantic factorAux(Semantic attr) throws SyntacticException {
+    private Semantic factorAux(Semantic accum_exp) throws SyntacticException {
         switch (lat.getType()) {
             case COMPLEX_ARITHMETIC_OPERATOR:
             case AND:
-                attr = opb(attr);
-                if(ase.opsValidation(attr)==1) {
-                    Object var1;
-                    if(attr.getValue("RESULT")==null){
-                        var1 = attr.getValue("VARIABLE");
-                    }else{
-                        var1 = attr.getValue("RESULT");
-
-                    }
-                    attr.setValue("VAR_LEFT", var1);
-                }
-                attr =terme(attr);
-                if(ase.opsValidation(attr)==1) {
-                    Object var2 = attr.getValue("VARIABLE");
-                    attr.setValue("VAR_RIGHT", var2);
-                    attr = ase.opsOperation(attr);
-                }
-                break;
+                accum_exp.setBOperator(opb());
+                return terme(accum_exp);
             default:
-                break;
+                return accum_exp;
         }
-        return attr;
     }
 
-    private Semantic opb(Semantic attr) throws SyntacticException {
+    private String opb() throws SyntacticException {
         switch (lat.getType()) {
             case COMPLEX_ARITHMETIC_OPERATOR:
-                attr.setValue(TokenType.COMPLEX_ARITHMETIC_OPERATOR,lat.getLexem());
-                consume(TokenType.COMPLEX_ARITHMETIC_OPERATOR);
-                break;
+                return consume(TokenType.COMPLEX_ARITHMETIC_OPERATOR);
             case AND:
-                attr.setValue(TokenType.AND,lat.getLexem());
-                consume(TokenType.AND);
-                break;
+                return consume(TokenType.AND);
             default:
                 throw (ExceptionFactory.opb(lat.getType()));
         }
-        return  attr;
     }
 
 
-    private Semantic llistaTermes(Semantic attr) throws SyntacticException {
+    private Semantic llistaTermes(Semantic acumm_exp) throws SyntacticException {
+
         switch (lat.getType()) {
             case SIMPLE_ARITHMETIC_OPERATOR:
             case OR:
-                attr = ops(attr);
-                if(ase.opsValidation(attr)==1) {
-                    Object var1 = attr.getValue("VARIABLE");
-                    attr.setValue("VAR_LEFT", var1);
-                }
-                attr =terme(attr);
-                if(ase.opsValidation(attr)==1) {
-                    Object var2 = attr.getValue("VARIABLE");
-                    attr.setValue("VAR_RIGHT", var2);
-                   attr = ase.opsOperation(attr);
-                }
-                attr = llistaTermes(attr);
+
+                acumm_exp.setBOperator(ops());
+                Semantic operand2 =terme(new Semantic());
+
+                return llistaTermes(acumm_exp.performBinaryOperation(operand2));
             default:
                 break;
         }
-        return attr;
+        return acumm_exp;
     }
 
-    private Semantic ops(Semantic attr) throws SyntacticException {
+    private String ops() throws SyntacticException {
         switch (lat.getType()) {
             case SIMPLE_ARITHMETIC_OPERATOR:
-                attr.setValue( TokenType.SIMPLE_ARITHMETIC_OPERATOR,lat.getLexem());
-                consume(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
-                break;
+                return consume(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
             case OR:
-                attr.setValue( TokenType.OR,lat.getLexem());
-                consume(TokenType.OR);
-                break;
+                return consume(TokenType.OR);
             default:
                 throw (ExceptionFactory.ops(lat.getType()));
         }
-        return attr;
     }
 
-    private void llistaExpSimple() throws SyntacticException {
+    private Semantic llistaExpSimple(Semantic left_side_exp) throws SyntacticException {
         switch (lat.getType()) {
             case RELATIONAL_OPERATOR:
-                consume(TokenType.RELATIONAL_OPERATOR);
-                attr = expSimple(attr);
-                break;
+                left_side_exp.setOpRel(consume(TokenType.RELATIONAL_OPERATOR));
+                return left_side_exp.performRelationalOperation(expSimple());
             default:
-                break;
+                return left_side_exp;
         }
     }
 
-    private Semantic tipus(Semantic attr) throws SyntacticException {
+    private ITipus tipus() throws SyntacticException {
+
         switch (lat.getType()) {
             case SIMPLE_TYPE:
-                //attr.setValue("tipus",lat.getLexem());
-                attr.setValue(TokenType.SIMPLE_TYPE, new TipusSimple(lat.getLexem(), 10000));
-                consume(TokenType.SIMPLE_TYPE);
-                break;
+                String type = Ase.parseType(consume(TokenType.SIMPLE_TYPE));
+                return new TipusSimple(type, type.equals(Ase.TIPUS_SIMPLE) ?
+                        MIPSFactory.TIPUS_SIMPLE_SIZE : MIPSFactory.TIPUS_LOGIC_SIZE);
+
             case VECTOR:
                 TipusArray vec = new TipusArray();
 
                 consume(TokenType.VECTOR);
                 consume(TokenType.SQUARE_BRACKETS_OPEN);
 
-                vec.setTamany(Integer.parseInt(lat.getLexem()));
+                int n_cells = Integer.parseInt(consume(TokenType.INTEGER_CONSTANT));
+                vec.inserirDimensio(new DimensioArray(
+                        new TipusSimple(Ase.TIPUS_SIMPLE, MIPSFactory.TIPUS_SIMPLE_SIZE),
+                        0,
+                        n_cells - 1
+                ));
 
-                consume(TokenType.INTEGER_CONSTANT);
                 consume(TokenType.SQUARE_BRACKETS_CLOSE);
                 consume(TokenType.DE);
 
-                vec.setTipusElements(new TipusSimple(lat.getLexem(), 10000));
+                String arrayType = Ase.parseType(consume(TokenType.SIMPLE_TYPE));
+                vec.setTipusElements(new TipusSimple(arrayType, arrayType.equals(Ase.TIPUS_SIMPLE) ?
+                        MIPSFactory.TIPUS_SIMPLE_SIZE : MIPSFactory.TIPUS_LOGIC_SIZE));
+                vec.setTamany(n_cells * vec.getTipusElements().getTamany());
+                return vec;
 
-                consume(TokenType.SIMPLE_TYPE);
-
-                attr.setValue(TokenType.VECTOR, vec);
-                break;
             default:
                 throw (ExceptionFactory.tipus(lat.getType()));
         }
-        return attr;
+
     }
 
     private void llistaDecFunc() throws SyntacticException {
@@ -430,7 +406,8 @@ public class Asi {
         consume(TokenType.BRACKETS_OPEN);
         ase.addNewFuncio(func);
         //TODO SEMANTIC
-        attr = llistaDecVar(attr);
+        OffsetFactory.reset();
+        llistaDecVar();
         llistaInst();
         consume(TokenType.BRACKETS_CLOSE);
         consume(TokenType.STATEMENT_SEPARATOR);
@@ -445,7 +422,7 @@ public class Asi {
         switch (lat.getType()) {
             case SIMPLE_TYPE:
                 attr.setAttributes(new Hashtable<String, TipusSimple>());
-                attr = tipus(attr);
+                ITipus tipus = tipus();
                 param.setTipus((TipusSimple) attr.getValue(TokenType.SIMPLE_TYPE));
 
                 //tipus();
@@ -461,7 +438,7 @@ public class Asi {
                 break;
             case VECTOR:
                 attr.setAttributes(new Hashtable<String, TipusArray>());
-                attr = tipus(attr);
+                ITipus tipus2 = tipus();
                 param.setTipus((TipusArray) attr.getValue(TokenType.VECTOR));
 
                 attr.setAttributes(new Hashtable<String, TipusPasParametre>());
@@ -532,27 +509,28 @@ public class Asi {
                 consume(TokenType.REPETIR);
                 llistaInst();
                 consume(TokenType.FINS);
-                attr = exp(attr);
+                attr = exp();
                 break;
             case MENTRE:
                 consume(TokenType.MENTRE);
-                attr = exp(attr);
+                attr = exp();
                 consume(TokenType.FER);
                 llistaInst();
                 consume(TokenType.FIMENTRE);
                 break;
             case SI:
                 consume(TokenType.SI);
-                attr = exp(attr);
+                attr = exp();
                 consume(TokenType.LLAVORS);
                 llistaInst();
                 hasSino();
                 consume(TokenType.FISI);
                 break;
             case IDENTIFIER:
-                variable();
+                Semantic target = variableStore();
                 consume(TokenType.ASSIGNMENT);
-                attr = exp(attr);
+                Semantic expression = exp();
+                target.store(expression);
                 break;
             case ESCRIURE:
                 consume(TokenType.ESCRIURE);
@@ -568,7 +546,7 @@ public class Asi {
                 break;
             case RETORNAR:
                 consume(TokenType.RETORNAR);
-                attr = exp(attr);
+                attr = exp();
                 break;
             default:
                 throw (ExceptionFactory.inst(lat.getType()));
@@ -602,9 +580,19 @@ public class Asi {
         }
     }
 
-    private void variable() throws SyntacticException {
-        consume(TokenType.IDENTIFIER);
-        attr = isVector(attr);
+    private Semantic variableStore() throws SyntacticException {
+        String id = consume(TokenType.IDENTIFIER);
+        return isVector(id, Ase.STORE);
+    }
+
+    /**
+     * POST:    if non-static returns a REG that holds the content of the variable or array position
+     *                                  TYPE with the type of the value that the register holds
+     *          if static returns STATIC=true and VALUE holds the constant Descriptor
+     */
+    private Semantic variable() throws SyntacticException {
+        String id = consume(TokenType.IDENTIFIER);
+        return isVector(id, Ase.LOAD);
     }
 
     private void llistaVar() throws SyntacticException {

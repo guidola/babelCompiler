@@ -1,11 +1,12 @@
 const NUM = 20 ;
+const DOS = 10;
+Sencer n;
+Sencer a;
+Sencer b;
+
 inici
-    n =0;
-    usuari = 0;
-    i=0;
-    mentre i !< NUM  fer
-        llegir(usuari);
-        n = n + usuari;
-        i = i + 1;
-    fimentre;
+    a = 1;
+    n = 2;
+    a = -n*n/a + a - n;
+    b = -a;
 fi
