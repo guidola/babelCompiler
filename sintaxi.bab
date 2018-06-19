@@ -1,12 +1,11 @@
 const NUM = 20 ;
 const DOS = 10;
-Sencer n;
 Sencer a;
 Sencer b;
+Sencer c;
 
 inici
-    a = 1;
-    n = 2;
-    a = -n*n/a + a - n;
-    b = -a;
+    b = 1;
+    a = 50;
+    c = a + b+  1 > b + a;
 fi

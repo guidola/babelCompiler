@@ -15,6 +15,11 @@ public class MIPSFactory {
     public static final int CERT = 0xffff;
     public static final int FALS = 0x0000;
 
+    // since MIPS instructions refering to comparison understand true as 0x01 and false as 0x00 static true and false
+    // for relation operations will follow the same logic.
+    public static final int CMP_OK = 0x01;
+    public static final int CMP_KO = 0x00;
+
     private static PrintWriter out;
     private static TagGenerator tags = new TagGenerator();
     private static RegisterHandler registers = new RegisterHandler();
@@ -63,8 +68,9 @@ public class MIPSFactory {
 
     private static String g_lw(String r_offset) {
         String rDest = registers.getRegister();
-        out.println("lw " + rDest + ", (" + add(RegisterHandler.GP, r_offset) + ")");
-        registers.returnRegister(r_offset);
+        String offset_result = add(RegisterHandler.GP, r_offset);
+        out.println("lw " + rDest + ", (" + offset_result + ")");
+        registers.returnRegister(offset_result);
         return rDest;
     }
 
@@ -74,8 +80,9 @@ public class MIPSFactory {
     }
 
     private static void g_sw(String rSrc, String r_offset) {
-        out.println("sw " + rSrc + ", (" + add(RegisterHandler.GP, r_offset) + ")");
-        registers.returnRegisters(rSrc, r_offset);
+        String offset_result = add(RegisterHandler.GP, r_offset);
+        out.println("sw " + rSrc + ", (" + offset_result + ")");
+        registers.returnRegisters(rSrc, offset_result);
     }
 
     /** LOCAL MEMORY OPERATIONS **/
@@ -88,7 +95,8 @@ public class MIPSFactory {
 
     private static String l_lw(String r_offset) {
         String rDest = registers.getRegister();
-        out.println("lw " + rDest + ", (" + add(RegisterHandler.FP, r_offset) + ")");
+        String offset_result = add(RegisterHandler.FP, r_offset);
+        out.println("lw " + rDest + ", (" + offset_result + ")");
         registers.returnRegister(r_offset);
         return rDest;
     }
@@ -99,7 +107,8 @@ public class MIPSFactory {
     }
 
     private static void l_sw(String rSrc, String r_offset) {
-        out.println("sw " + rSrc + ", (" + add(RegisterHandler.FP, r_offset) + ")");
+        String offset_result = add(RegisterHandler.FP, r_offset);
+        out.println("sw " + rSrc + ", (" + offset_result + ")");
         registers.returnRegisters(rSrc, r_offset);
     }
 
@@ -283,10 +292,11 @@ public class MIPSFactory {
 
     private static String simpleToLogic(String r1) {
         String rDest = registers.getRegister();
-        out.println("li " + rDest + ", $zero");
-        out.println("beq " + r1 + ", $zero");
+        out.println("li " + rDest + ", 0");
+        String tag = tags.getConversionTag();
+        out.println("beq " + r1 + ", $zero, " + tag);
         out.println("li " + rDest + ", 0xffff");
-        out.print(tags.getConversionTag());
+        out.print(tag + ": ");
         registers.returnRegister(r1);
         return rDest;
     }
@@ -396,12 +406,12 @@ public class MIPSFactory {
     private static void defineErrorRoutine() {
 
         //register string
-        String tag = registerStringInDataArea("\"Index out of bounds\"");
+        String tag = registerStringInDataArea("\"[El nucli ha petat] Index out of bounds\"");
 
         // print_str
         out.println(TagGenerator.ERROR_IOB + ": ");
         out.println("li $v0, 0x04");
-        out.println("lw $a0, " + tag);
+        out.println("la $a0, " + tag);
         out.println("syscall");
 
         // exit
@@ -521,9 +531,9 @@ public class MIPSFactory {
 
     public static String performAnd(String r1, int literal, boolean isInt){
         if(isInt) {
-            return s_ori(r1, literal);
+            return s_andi(r1, literal);
         } else {
-            return l_ori(r1, literal);
+            return l_andi(r1, literal);
         }
     }
 
@@ -537,9 +547,9 @@ public class MIPSFactory {
 
     public static String performAnd(int literal, String r2, boolean isInt){
         if(isInt) {
-            return s_ori(r2, literal);
+            return s_andi(r2, literal);
         } else {
-            return l_ori(r2, literal);
+            return l_andi(r2, literal);
         }
     }
 

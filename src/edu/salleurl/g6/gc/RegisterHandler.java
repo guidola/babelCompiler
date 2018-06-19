@@ -36,13 +36,23 @@ public class RegisterHandler {
         return registers.pop();
     }
 
+    private boolean isReservedRegister(String register) {
+        return register.equals(GP) || register.equals(FP);
+    }
+
     public void returnRegister(String register) {
+        if(isReservedRegister(register)) return;
         registers.push(register);
     }
 
     public void returnRegisters(String r1, String r2) {
-        registers.push(r1);
-        registers.push(r2);
+        if(!isReservedRegister(r1)) {
+            registers.push(r1);
+        }
+        if(!isReservedRegister(r2)) {
+            registers.push(r2);
+        }
+
     }
 
 

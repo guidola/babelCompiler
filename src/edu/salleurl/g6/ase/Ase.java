@@ -99,7 +99,7 @@ public class Ase {
 
     public Semantic getArray(String id) {
         Variable var = ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(id);
-        boolean isGlobal = false;
+        boolean isGlobal = ts.getBlocActual() == CONTEXT_GLOBAL;
         if(var == null) {
             var = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id);
             if(var == null) {
@@ -132,13 +132,14 @@ public class Ase {
         cell.setType(vector.arrayType());
         cell.setEstatic(false);
         cell.setGlobal(vector.isGlobal());
-        cell.isVector(true);
+
 
         if(attr.isEstatic()) {
             // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension )
-
+            cell.isVectorIndexNonStatic(false);
             cell.setOffset(vector.offset() + attr.intValue() * vector.arrayType().getTamany());
         } else {
+            cell.isVectorIndexNonStatic(true);
             cell.setRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offset(), attr.reg(), vector.arrayLowerBound(),
                     vector.arrayUpperBound()));
 
@@ -148,7 +149,7 @@ public class Ase {
     }
 
 
-    public Semantic validateArrayAccessAndLoadCell(String id, Semantic attr) {
+    public Semantic validateArrayAccessAndLoadCell(String id, Semantic expression) {
 
         //TODO validate it is actually an array
         Semantic vector = getArray(id);
@@ -159,12 +160,12 @@ public class Ase {
         cell.setType(vector.arrayType());
         cell.setEstatic(false);
 
-        if(attr.isEstatic()) {
+        if(expression.isEstatic()) {
             // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension
 
-            cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), attr.intValue(), vector.isGlobal()));
+            cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), expression.intValue(), vector.isGlobal()));
         } else {
-            cell.setRegister(MIPSFactory.validateAndLoadArrayCell(vector.offset(), attr.reg(), vector.arrayLowerBound(),
+            cell.setRegister(MIPSFactory.validateAndLoadArrayCell(vector.offset(), expression.reg(), vector.arrayLowerBound(),
                     vector.arrayUpperBound(), vector.isGlobal()));
 
         }

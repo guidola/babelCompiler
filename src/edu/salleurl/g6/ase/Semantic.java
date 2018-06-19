@@ -121,8 +121,8 @@ public void setAttributes(Hashtable newValue) {
         getAttributes().put("OFFSET", offset);
     }
 
-    public void isVector(boolean isVector) {
-        getAttributes().put("IS_VECTOR", isVector);
+    public void isVectorIndexNonStatic(boolean isVector) {
+        getAttributes().put("IS_VECTOR_INDEX_NON_STATIC", isVector);
     }
 
 public void copy(Semantic exp) {
@@ -147,6 +147,25 @@ public void copy(Semantic exp) {
 		setValue("TOKEN",exp.getValue("TOKEN"));
 
 	}
+	
+	private int performComparison(int left_side, String operator, int right_side) {
+        switch(operator) {
+            case "==":
+                return left_side == right_side ? MIPSFactory.CMP_OK : MIPSFactory.CMP_KO;
+            case "!=":
+                return left_side != right_side ? MIPSFactory.CMP_OK : MIPSFactory.CMP_KO;
+            case ">":
+                return left_side > right_side ? MIPSFactory.CMP_OK : MIPSFactory.CMP_KO;
+            case "<":
+                return left_side < right_side ? MIPSFactory.CMP_OK : MIPSFactory.CMP_KO;
+            case ">=":
+                return left_side >= right_side ? MIPSFactory.CMP_OK : MIPSFactory.CMP_KO;
+            case "<=":
+                return left_side <= right_side ? MIPSFactory.CMP_OK : MIPSFactory.CMP_KO;
+            default:
+                return MIPSFactory.CMP_KO;
+        }
+    }
 
 	public Semantic performRelationalOperation(Semantic right_side_exp) {
 
@@ -158,7 +177,7 @@ public void copy(Semantic exp) {
 
         if(this.isEstatic()) {
             if(right_side_exp.isEstatic()) {
-                //TODO perform manual relational operation
+                result.setValue(performComparison(this.intValue(), this.opRel(), right_side_exp.intValue()));
             } else {
                 result.setRegister(MIPSFactory.performComparison(this.intValue(), this.opRel(), right_side_exp.reg()));
             }
@@ -281,7 +300,7 @@ public void copy(Semantic exp) {
                     }
                     break;
 
-                case "and":
+                case "or":
                     if(this.isEstatic()){
                         result.setRegister(MIPSFactory.performOr(this.intValue(), operand2.reg(), this.isInt()));
                     } else {
@@ -293,7 +312,7 @@ public void copy(Semantic exp) {
                     }
                     break;
 
-                case "or":
+                case "and":
                     if(this.isEstatic()){
                         result.setRegister(MIPSFactory.performAnd(this.intValue(), operand2.reg(), this.isInt()));
                     } else {
@@ -314,7 +333,7 @@ public void copy(Semantic exp) {
 
     public void store(Semantic expression) {
 
-        if(this.isVector()){
+        if(this.isVectorIndexNonStatic()){
             if(expression.isEstatic()){
                 MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
             } else {
@@ -351,7 +370,7 @@ public void copy(Semantic exp) {
     }
 
 	public int intValue() {
-		return (Integer) attributes.get("VALUE");
+		return (int) attributes.get("VALUE");
 	}
 
 	public String strValue() {
@@ -410,8 +429,9 @@ public void copy(Semantic exp) {
         return (String) attributes.get("REL_OPERATOR");
     }
 
-    public boolean isVector() {
-        return (boolean) attributes.get("IS_VECTOR");
+    public boolean isVectorIndexNonStatic() {
+        boolean b = (boolean) attributes.get("IS_VECTOR_INDEX_NON_STATIC");
+        return (boolean) attributes.get("IS_VECTOR_INDEX_NON_STATIC");
     }
 
 

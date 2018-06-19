@@ -12,7 +12,7 @@ public class TagGenerator {
     }
 
     public String getConversionTag() {
-        return "conv" + nextTag++ + ": ";
+        return "conv" + nextTag++;
     }
 
     public String getLoopTag() {

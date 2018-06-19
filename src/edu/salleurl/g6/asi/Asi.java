@@ -219,7 +219,7 @@ public class Asi {
 
             default:
                 variable = ase.getVariableOrConstant(id);
-                variable.isVector(false);
+                variable.isVectorIndexNonStatic(false);
                 if(variable.isEstatic()){
                     //TODO prompt error if variable is CONST and we are doing a STORE action
                     if(variable.isString()) {
