@@ -2,17 +2,17 @@
 package taulasimbols;
 
 /**
- * <p>Classe que representa els diferents tipus de pas de 
- * paràmetres que pot tenir el llenguatge Babel.</p>
+ * <p>Classe que representa els diferents tipus de pas de
+ * parï¿½metres que pot tenir el llenguatge Babel.</p>
  */
 public class TipusPasParametre {
 
-	/**<p>Tipus de pas de paràmetre per referència</p>*/
+	/**<p>Tipus de pas de parï¿½metre per referï¿½ncia</p>*/
     public static TipusPasParametre REFERENCIA = new TipusPasParametre("REFERENCIA");
 
-	/**<p>Tipus de pas de paràmetre per valor</p>*/
+	/**<p>Tipus de pas de parï¿½metre per valor</p>*/
     public static TipusPasParametre VALOR = new TipusPasParametre("VALOR");
-    
+
     /**<p>nom del tipus de pas de paramtre</p>*/
 	private String nom;
 
@@ -23,7 +23,7 @@ public class TipusPasParametre {
 	private TipusPasParametre(String nom) {
 		this.nom = nom;
 	}
-	
+
     public String toString() {
     	return nom;
     }

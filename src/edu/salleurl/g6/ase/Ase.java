@@ -4,6 +4,8 @@ import edu.salleurl.g6.model.TokenType;
 import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 import taulasimbols.*;
 
+import java.awt.color.ProfileDataException;
+
 public class Ase {
     private TaulaSimbols ts;
 
@@ -24,14 +26,14 @@ public class Ase {
     }
 
     public void addNewVar(Variable var) {
-        if (ts.obtenirBloc(ts.getBlocActual()).obtenirConstant(var.getNom()) == null){
+        if (ts.obtenirBloc(ts.getBlocActual()).obtenirConstant(var.getNom()) == null) {
             //ts.obtenirBloc(ts.getBlocActual()).inserirVariable(var);
-            if(ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(var.getNom()) == null){
+            if (ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(var.getNom()) == null) {
                 ts.obtenirBloc(ts.getBlocActual()).inserirVariable(var);
-            }else{
+            } else {
                 System.err.println("Existent variable! Type: " + var.getTipus().getNom() + " Name: " + var.getNom());
             }
-        }else{
+        } else {
             System.err.println("Variable already defined like constant! Type: " + var.getTipus().getNom() + " Name: " + var.getNom());
         }
     }
@@ -93,97 +95,111 @@ public class Ase {
         return attr;
     }
 
-    public int opsValidation(Semantic attr) {
+    public Semantic opsValidation(Semantic attr) {
         Object aTipus = null;
+        int status = 0;
 
         if (attr.getValue(TokenType.COMPLEX_ARITHMETIC_OPERATOR) != null) {
             String aux = (String) attr.getValue(TokenType.COMPLEX_ARITHMETIC_OPERATOR);
             if (aux.equals("*") || aux.equals("/")) {
                 aTipus = attr.getValue("VARIABLE");
+                if(aTipus == null) aTipus = attr.getValue("RESULT");
 
             }
         } else if (attr.getValue(TokenType.SIMPLE_ARITHMETIC_OPERATOR) != null) {
             String aux = (String) attr.getValue(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
             if (aux.equals("+") || aux.equals("-")) {
                 aTipus = attr.getValue("VARIABLE");
-
+                if(aTipus == null) aTipus = attr.getValue("RESULT");
             }
         } else if (attr.getValue(TokenType.RELATIONAL_OPERATOR) != null) {
             String aux = (String) attr.getValue(TokenType.RELATIONAL_OPERATOR);
-            if (aux.equals("==") || aux.equals(">=") || aux.equals("<=") || aux.equals(">") || aux.equals("<")||aux.equals("!=")) {
+            if (aux.equals("==") || aux.equals(">=") || aux.equals("<=") || aux.equals(">") || aux.equals("<") || aux.equals("!=")) {
                 aTipus = attr.getValue("VARIABLE");
+                if(aTipus == null) aTipus = attr.getValue("RESULT");
             }
         } else if (attr.getValue(TokenType.AND) != null) {
             aTipus = attr.getValue("VARIABLE");
-            if(aTipus instanceof Variable) aTipus = ((Variable) aTipus).getTipus();
+            if(aTipus == null) aTipus = attr.getValue("RESULT");
+            if (aTipus instanceof Variable) aTipus = ((Variable) aTipus).getTipus();
 
         } else if (attr.getValue(TokenType.OR) != null) {
             aTipus = attr.getValue("VARIABLE");
-            if(aTipus instanceof Variable) aTipus = ((Variable) aTipus).getTipus();
+            if(aTipus == null) aTipus = attr.getValue("RESULT");
+            if (aTipus instanceof Variable) aTipus = ((Variable) aTipus).getTipus();
 
         } else if (attr.getValue(TokenType.NOT) != null) {
             aTipus = attr.getValue("VARIABLE");
-            if(aTipus instanceof Variable) aTipus = ((Variable) aTipus).getTipus();
+            if(aTipus == null) aTipus = attr.getValue("RESULT");
+            if (aTipus instanceof Variable) aTipus = ((Variable) aTipus).getTipus();
         }
-        if(aTipus instanceof  Parametre){
-            if(((Parametre) aTipus).getTipus() instanceof TipusSimple){
-                return 1;
+        if (aTipus instanceof Parametre) {
+            if (((Parametre) aTipus).getTipus() instanceof TipusSimple) {
+                status = 1;
             }
-        }else{
-            if(aTipus instanceof TipusSimple){
-                return 1;
+        } else {
+            if (aTipus instanceof TipusSimple) {
+                status = 1;
             }
         }
-        return 0;
+
+        attr.setValue("OPS_VALIDATION", status);
+        return attr;
     }
-    public TipusSimple initVar(TipusSimple var){
-        if(var.getNom().equals("sencer")){
+
+    public TipusSimple initVar(TipusSimple var) {
+        if (var.getNom().equals("sencer")) {
             var.setNom("0");
-        }else if(var.getNom().equals("logic")){
+        } else if (var.getNom().equals("logic")) {
             var.setNom("cert");
         }
 
         return var;
     }
 
-    public Semantic opuOperation(Semantic attr){
-        if(attr.getValue("OPU")!=null){
-            if(attr.getValue("OPU").equals("not")){
+    public Semantic opuOperation(Semantic attr) {
+        if (attr.getValue("OPU") != null) {
+            if (attr.getValue("OPU").equals("not")) {
 
                 Object var1 = attr.getValue("VARIABLE");
-                if(var1 instanceof Parametre){
+                if (var1 instanceof Parametre) {
                     var1 = ((Parametre) var1).getTipus();
+                } else {
+                    if (var1 instanceof Variable) var1 = ((Variable) var1).getTipus();
                 }
                 var1 = initVar((TipusSimple) var1);
-                if(isLogic(var1)){
+                if (isLogic(var1)) {
                     if (((TipusSimple) var1).getNom().equals("cert")) {
                         ((TipusSimple) var1).setNom("fals");
                     } else {
                         ((TipusSimple) var1).setNom("cert");
                     }
-                }else{
+                } else {
                     if (((TipusSimple) var1).getNom().equals("1")) {
                         ((TipusSimple) var1).setNom("0");
-                    } else if(((TipusSimple) var1).getNom().equals("0")){
+                    } else if (((TipusSimple) var1).getNom().equals("0")) {
                         ((TipusSimple) var1).setNom("1");
-                    }else{
+                    } else {
                         System.err.println("Incorrect use of not. Using invalid integer value");
                         return attr;
                     }
                 }
-                attr.setValue("VARIABLE",var1);
-                attr.setValue("RESULT",var1);
-            }else if(attr.getValue("OPU").equals("-")){
+                attr.setValue("VARIABLE", var1);
+                attr.setValue("RESULT", var1);
+                attr.removeAttribute("OPU");
+            } else if (attr.getValue("OPU").equals("-")) {
                 Object var1 = attr.getValue("VARIABLE");
+                if (var1 instanceof Variable) var1 = ((Variable) var1).getTipus();
                 var1 = initVar((TipusSimple) var1);
                 int ops;
 
-                    if (!isLogic(var1)) {
-                        ops = 0 - Integer.parseInt(((TipusSimple) var1).getNom());
-                        ((TipusSimple) var1).setNom(Integer.toString(ops));
-                    }
-                attr.setValue("VARIABLE",var1);
-                attr.setValue("RESULT",var1);
+                if (!isLogic(var1)) {
+                    ops = 0 - Integer.parseInt(((TipusSimple) var1).getNom());
+                    ((TipusSimple) var1).setNom(Integer.toString(ops));
+                }
+                attr.setValue("VARIABLE", var1);
+                attr.setValue("RESULT", var1);
+                attr.removeAttribute("OPU");
             }
         }
         return attr;
@@ -193,16 +209,25 @@ public class Ase {
         Object var1 = attr.getValue("VAR_LEFT");
         Object var2 = attr.getValue("VAR_RIGHT");
 
-        if(var1 instanceof Parametre){
+        if (var1 instanceof Parametre) {
             var1 = ((Parametre) var1).getTipus();
-        }else{
-            if(var2 instanceof Parametre){
-                var2 = ((Parametre) var2).getTipus();
+        } else {
+            if (var1 instanceof Variable) {
+                var1 = ((Variable) var1).getTipus();
+            } else {
+                if (var2 instanceof Parametre) {
+                    var2 = ((Parametre) var2).getTipus();
+                } else {
+                    if (var2 instanceof Variable) {
+                        var2 = ((Variable) var2).getTipus();
+
+                    }
+                }
             }
         }
         if (isSimpleType(var1) && isSimpleType(var2)) {
             var1 = initVar((TipusSimple) var1);
-            var2 = initVar((TipusSimple)var2);
+            var2 = initVar((TipusSimple) var2);
             if (isLogic(var1) && isLogic(var2)) {
                 //if ((((TipusSimple) var1).getNom().equals("cert") || ((TipusSimple) var1).getNom().equals("fals")) && (((TipusSimple) var2).getNom().equals("cert") || ((TipusSimple) var2).getNom().equals("fals"))) {
                 if (attr.getValue(TokenType.OR) != null) {
@@ -247,12 +272,17 @@ public class Ase {
                             //ERROR AL DIVIDIR
                         }
                     }
+                    attr.removeAttribute(TokenType.COMPLEX_ARITHMETIC_OPERATOR);
                 } else if (ops != null) {
                     if (ops.equals("+")) {
                         op = Integer.parseInt(((TipusSimple) var1).getNom()) + Integer.parseInt(((TipusSimple) var2).getNom());
                     } else if (ops.equals("-")) {
                         op = Integer.parseInt(((TipusSimple) var1).getNom()) - Integer.parseInt(((TipusSimple) var2).getNom());
                     }
+                    attr.removeAttribute(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
+                    ((TipusSimple) var2).setNom(op.toString());
+                    attr.setValue("RESULT", var2);
+                    attr.setValue("VAR_LEFT", var2);
                 } else if (opr != null) {
                     if (opr.equals("==")) {
                         if (((TipusSimple) var1).getNom().equals(((TipusSimple) var2).getNom())) {
@@ -282,7 +312,7 @@ public class Ase {
                             ((TipusSimple) var2).setNom("fals");
                         }
                     } else if (opr.equals("<")) {
-
+                        //TODO PA QUE PARSEAR CRACK...
                         if (Integer.parseInt(((TipusSimple) var1).getNom()) < Integer.parseInt(((TipusSimple) var2).getNom())) {
                             ((TipusSimple) var2).setNom("cert");
                         } else {
@@ -296,19 +326,16 @@ public class Ase {
                             ((TipusSimple) var2).setNom("fals");
                         }
                     }
-                }/*else if (attr.getValue(TokenType.NOT) != null) {
-                    if (((TipusSimple) var1).getNom().equals("1")) {
-                        ((TipusSimple) var1).setNom("0");
-                    } else if(((TipusSimple) var1).getNom().equals("0")){
-                        ((TipusSimple) var1).setNom("1");
-                    }else{
-                        System.err.println("Incorrect use of not. Using invalid integer value");
-                    }
-                }*/
-                if (opr == null) ((TipusSimple) var2).setNom(op.toString());
-                attr.setValue("RESULT", var2);
-                attr.setValue("VAR_LEFT", var2);
+
+                    attr.setValue("RESULT", var2);
+                    //attr.setValue("VAR_LEFT", var2);
+                    attr.removeAttribute(TokenType.RELATIONAL_OPERATOR);
+                }
+
                 attr.removeAttribute("VARIABLE");
+
+
+                //attr.removeAttribute("VARIABLE");
             }
         } else {
 
@@ -319,12 +346,79 @@ public class Ase {
                 System.err.println("Right part of operation have different type");
             }
         }
+        /*attr.removeAttribute(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
+        attr.removeAttribute(TokenType.COMPLEX_ARITHMETIC_OPERATOR);
+        attr.removeAttribute(TokenType.RELATIONAL_OPERATOR);
+        attr.removeAttribute(TokenType.AND);
+        attr.removeAttribute(TokenType.OR);
+        attr.removeAttribute(TokenType.NOT);*/
+        return attr;
+    }
+
+    public Semantic isFunction(Semantic attr, String name) {
+        int find = 0;
+        Procediment proc = ts.obtenirBloc(0).obtenirProcediment(name);
+        if (proc != null) {
+            find = 1;
+            attr.setValue("FUNC_NAME", name);
+            attr.setValue("iParam", 0);
+        }
+
+        attr.setValue("FIND", find);
+        return attr;
+    }
+
+    public Semantic validateParam(Semantic attr) {
+        String functionName = (String) attr.getValue("FUNC_NAME");
+        if (functionName != null) {
+            Procediment proc = ts.obtenirBloc(0).obtenirProcediment(functionName);
+            int iParam = (int) attr.getValue("iParam");
+            if (proc != null) {
+                if (proc.getNumeroParametres() == 0) {
+                    System.err.println("Error. Passing argument with function without required parameters.");
+                } else {
+                    if (iParam < proc.getNumeroParametres()) {
+
+                        Object param = proc.obtenirParametre(iParam).getTipus();
+                        Object var = attr.getValue("VARIABLE");
+                        if (var instanceof Variable) var = ((Variable) var).getTipus();
+                        if (var instanceof Parametre) var = ((Parametre) var).getTipus();
+                        if (!var.equals(param)) System.err.println("Error. Incorrect type of parameter.");
+                        iParam++;
+                        attr.setValue("iParam", iParam);
+                    }
+                }
+
+            }
+        }
+        return attr;
+    }
+
+    public Semantic isParam(Semantic attr, String name) {
+        int find = 0;
+        int iBloc = ts.getBlocActual();
+        Procediment proc = ts.obtenirBloc(iBloc).obtenirProcediment(name);
+        if (proc != null) {
+            int nParam = proc.getNumeroParametres();
+            for (int i = 0; find == 0 && i < nParam; i++) {
+                if (proc.obtenirParametre(i).getNom().equals(name)) {
+                    attr.setValue("VARIABLE", proc.obtenirParametre(i).getTipus());
+                    find = 1;
+                }
+            }
+        } else if (iBloc == 1) {
+            if(ts.obtenirBloc(0).obtenirVariable(name) != null){
+                attr.setValue("VARIABLE", ts.obtenirBloc(0).obtenirVariable(name).getTipus());
+                find = 1;
+            }
+
+        }
+        attr.setValue("FIND", find);
         return attr;
     }
 
     public Semantic findVariable(Semantic attr, String name) {
 
-        System.out.println("VARIABLE--> " + name);
         int find = 0;
         if (ts.getBlocActual() == 1) {
             if (ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(name) != null) {
@@ -337,24 +431,8 @@ public class Ase {
                 }
             }
 
-            /*else if (attr.getValue("FUNC_NAME") != null) {
-                String nom_func = (String) attr.getValue("FUNC_NAME");
-                Procediment proc = ts.obtenirBloc(1).obtenirProcediment(nom_func);
-                if (proc != null) {
-                    int nParam = proc.getNumeroParametres();
-                    for (int i = 0; find == 0 && i < nParam; i++) {
-                        if (proc.obtenirParametre(i).getNom().equals(name)) {
-                            attr.setValue("VARIABLE", proc.obtenirParametre(i).getTipus());
-                            find = 1;
-                        }
-                    }
-                }
-            } else if (ts.obtenirBloc(0).obtenirVariable(name) != null) {
-                attr.setValue("VARIABLE", ts.obtenirBloc(0).obtenirVariable(name).getTipus());
-                find = 1;
-            }
-            }*/
-        } if(find == 0){
+        }
+        if (find == 0) {
             if (ts.obtenirBloc(0).obtenirConstant(name) != null) {
                 attr.setValue("VARIABLE", ts.obtenirBloc(0).obtenirConstant(name).getTipus());
                 find = 1;
@@ -368,15 +446,29 @@ public class Ase {
         }
 
         if (find == 0) {
+            attr = isParam(attr, name);
+            find = (int) attr.getValue("FIND");
+
+        }
+        if (find == 0) {
+            attr = isFunction(attr, name);
+            find = (int) attr.getValue("FIND");
+        }
+
+        if (find == 0) {
             System.err.println("ERROR, Variable with name " + name + " not exists.");
         }
-        attr.setValue("FIND_VAR", find);
+        //attr.setValue("FIND_VAR", find);
+        attr.setValue("FIND", find);
+        //attr.removeAttribute("FIND");
         return attr;
     }
-    //TODO ASSIGN VALUES
+
     public Semantic addNewVarValue(Semantic attr) {
         String name = (String) attr.getValue("ID_ASSIGMENT");
-        ITipus newTipus = (ITipus) attr.getValue("VARIABLE");
+        Object newTipus = attr.getValue("VARIABLE");
+        if (newTipus instanceof Parametre) newTipus = ((Parametre) newTipus).getTipus();
+        if (newTipus == null) newTipus = (ITipus) attr.getValue("RESULT");
         Variable newVar = ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(name);
         int blockActual = 1;
         if (newVar == null) {
@@ -388,17 +480,17 @@ public class Ase {
             if (newVar.getTipus() instanceof TipusArray) {
                 if (attr.getValue("INDEX_VECTOR") != null) {
                     int index = Integer.parseInt((String) attr.getValue("INDEX_VECTOR"));
-                    ((TipusArray) newVar.getTipus()).obtenirDimensio(index).setTipusLimit(newTipus);
+                    ((TipusArray) newVar.getTipus()).obtenirDimensio(index).setTipusLimit(((ITipus) newTipus));
                     ts.obtenirBloc(blockActual).inserirVariable(newVar);
                 }
             } else {
 
-                if (isInteger(newVar.getTipus(), newVar.getTipus().getNom()) && isInteger(newTipus, newTipus.getNom()) || (newVar.getTipus().getNom().equals("sencer"))) {
-                    newVar.setTipus(newTipus);
+                if (isInteger(newVar.getTipus(), newVar.getTipus().getNom()) && isInteger(newTipus, ((ITipus) newTipus).getNom()) || (newVar.getTipus().getNom().equals("sencer"))) {
+                    newVar.setTipus(((ITipus) newTipus));
                     ts.obtenirBloc(blockActual).inserirVariable(newVar);
                 } else {
                     if (isLogic(newVar.getTipus()) && isLogic(newTipus)) {
-                        newVar.setTipus(newTipus);
+                        newVar.setTipus(((ITipus) newTipus));
                         ts.obtenirBloc(blockActual).inserirVariable(newVar);
                     }
                 }
@@ -411,8 +503,11 @@ public class Ase {
 
 
         Object func = attr.getValue(TokenType.FUNCIO);
-
-        if ( func != null) {
+        if (func == null){
+            attr = findVariable(attr,(String)attr.getValue("FUNC_NAME"));
+            func = attr.getValue("VARIABLE");
+        }
+        if (func != null) {
             ITipus aux1 = ((Funcio) func).getTipus();
             ITipus aux2 = (ITipus) attr.getValue("RESULT");
             if (isSimpleType(aux1) && isSimpleType(aux2)) {
@@ -428,31 +523,31 @@ public class Ase {
             if (ts.getBlocActual() == 0) {
                 System.err.println("Invalid return between inici and fi");
             } else {
-                System.err.println("Return inside Procedure");
+
+                if(!(func instanceof  Funcio))System.err.println("Return inside Procedure, with name: "+((Funcio)func).getNom());
             }
         }
 
-
-    return attr;
+        attr = cleanResultsAttr(attr);
+        return attr;
     }
 
     public Semantic vectorAccesValidation(Semantic attr) {
         boolean ok = false;
 
         String vec_name = (String) attr.getValue("ID_ASSIGMENT");
-        TipusSimple acces_var = attr.getValue("VARIABLE") == null ? (TipusSimple) attr.getValue("RESULT") : (TipusSimple) attr.getValue("VARIABLE");
-
+        Object acces_var = attr.getValue("VARIABLE") == null ? (TipusSimple) attr.getValue("RESULT") : (TipusSimple) attr.getValue("VARIABLE");
+        if (acces_var instanceof Variable) acces_var = ((Variable) acces_var).getTipus();
         attr = findVariable(attr, vec_name);
-        if ((int) attr.getValue("FIND_VAR") == 1) {
+        if (/*(int) attr.getValue("FIND_VAR") == 1 ||*/ (int) attr.getValue("FIND") == 1) {
             ok = true;
             TipusArray vec = (TipusArray) attr.getValue("VARIABLE");
 
-            //TODO CONFIRMAR SI NOMES HI HAURA VECTORS D'UNA DIMENSIO
-            if ((Integer.parseInt(acces_var.getNom()) > vec.getNumeroDimensions()) || (Integer.parseInt(acces_var.getNom()) <= 0)) {
+            if ((Integer.parseInt(((TipusSimple) acces_var).getNom()) > vec.getNumeroDimensions()) || (Integer.parseInt(((TipusSimple) acces_var).getNom()) <= 0)) {
                 System.err.println("The index of vector is out of range.");
                 ok = false;
             } else {
-                attr.setValue("INDEX_VECTOR", acces_var.getNom());
+                attr.setValue("INDEX_VECTOR", ((TipusSimple) acces_var).getNom());
             }
 
         }
@@ -508,4 +603,11 @@ public class Ase {
         return false;
     }
 
+    public Semantic cleanResultsAttr(Semantic attr){
+        attr.removeAttribute("VAR_LEFT");
+        attr.removeAttribute("VAR_RIGHT");
+        attr.removeAttribute("RESULT");
+        attr.removeAttribute("VARIABLE");
+        return attr;
+    }
 }

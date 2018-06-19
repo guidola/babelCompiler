@@ -6,11 +6,6 @@ import edu.salleurl.g6.ase.Semantic;
 import edu.salleurl.g6.model.*;
 import taulasimbols.*;
 
-import javax.net.ssl.SSLEngineResult;
-import java.lang.invoke.SwitchPoint;
-import java.util.Hashtable;
-import java.util.Vector;
-
 public class Asi {
     private Ase ase;
     private Token lat;
@@ -48,26 +43,21 @@ public class Asi {
         switch (lat.getType()) {
             case CONST:
                 Constant constant = new Constant();
-                attr.setAttributes(new Hashtable<String, Constant>());
                 attr.setValue(TokenType.CONST, constant);
                 attr = decVar(attr);
-                //ase.addNewConstant((Constant) attr.getValue(TokenType.CONST));
                 attr = llistaDecVar(attr);
                 break;
             case SIMPLE_TYPE:
                 Variable var1 = new Variable();
-                attr.setAttributes(new Hashtable<String, Variable>());
                 attr.setValue(TokenType.SIMPLE_TYPE, var1);
                 attr = decVar(attr);
-                //ase.addNewVar((Variable) attr.getValue(TokenType.SIMPLE_TYPE));
                 attr = llistaDecVar(attr);
                 break;
             case VECTOR:
                 Variable var2 = new Variable();
-                attr.setAttributes(new Hashtable<String, Variable>());
+                //attr.setAttributes(new Hashtable<String, Variable>());
                 attr.setValue(TokenType.VECTOR, var2);
                 attr = decVar(attr);
-                //ase.addNewVar((Variable) attr.getValue(TokenType.VECTOR));
                 attr = llistaDecVar(attr);
                 break;
             default:
@@ -92,11 +82,13 @@ public class Asi {
                     ITipus aux = (ITipus) attr.getValue("RESULT");
                     constant.setValor(aux.getNom());
                     constant.setTipus((ITipus) attr.getValue("RESULT"));
+                    attr.removeAttribute("RESULT");
                 }else if(attr.getValue("VARIABLE")!=null){
                     ITipus aux = (ITipus) attr.getValue("VARIABLE");
                     constant.setValor(aux.getNom());
                     constant.setTipus((ITipus) attr.getValue("VARIABLE"));
                 }
+                attr = ase.cleanResultsAttr(attr);
 
                 consume(TokenType.STATEMENT_SEPARATOR);
                 ase.addNewConstant(constant);
@@ -112,7 +104,7 @@ public class Asi {
                 consume(TokenType.IDENTIFIER);
                 consume(TokenType.STATEMENT_SEPARATOR);
                 ase.addNewVar(var1);
-                attr.setValue(TokenType.SIMPLE_TYPE, var1);
+                attr.removeAttribute( TokenType.SIMPLE_TYPE);
                 break;
             case VECTOR:
                 Variable var2 = new Variable();
@@ -123,7 +115,7 @@ public class Asi {
                 consume(TokenType.IDENTIFIER);
                 consume(TokenType.STATEMENT_SEPARATOR);
                 ase.addNewVar(var2);
-                attr.setValue(TokenType.VECTOR, var2);
+                attr.removeAttribute( TokenType.VECTOR);
                 break;
             default:
                 throw (ExceptionFactory.decVar(lat.getType()));
@@ -132,21 +124,32 @@ public class Asi {
     }
 
     private Semantic exp(Semantic attr) throws SyntacticException {
-        attr = expSimple(attr);
+
+        Object var_left = null;
         if(attr.getValue("VARIABLE")!=null){
-            attr.setValue("VAR_LEFT",attr.getValue("VARIABLE"));
+            var_left = attr.getValue("VARIABLE");
             //attr.removeAttribute("VARIABLE");
         }
-
+        attr = expSimple(attr);
         attr = llistaExpSimple(attr);
         if(attr.getValue(TokenType.RELATIONAL_OPERATOR)!=null){
 
-            if(attr.getValue("VARIABLE")!=null){
-                attr.setValue("VAR_RIGHT",attr.getValue("VARIABLE"));
-                if(ase.opsValidation(attr)==1){
+            if( var_left != null){
+                attr.setValue("VAR_LEFT",var_left);
+                if(attr.getValue("VARIABLE") !=null ) {
+                    attr.setValue("VAR_RIGHT",attr.getValue("VARIABLE"));
+                }else {
+                    attr.setValue("VAR_RIGHT",attr.getValue("RESULT"));
+                    attr.setValue("VAR_RIGHT",attr.getValue("RESULT"));
+                }
+
+                attr = ase.opsValidation(attr);
+                if((int)attr.getValue("OPS_VALIDATION") == 1){
                     attr = ase.opsOperation(attr);
                 }
             }
+
+
         }
         return attr;
     }
@@ -211,6 +214,7 @@ public class Asi {
                 consume(TokenType.PARENTHESIS_OPEN);
                 attr = exp(attr);
                 consume(TokenType.PARENTHESIS_CLOSE);
+                attr.removeAttribute(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
                 break;
             default:
                 throw (ExceptionFactory.factor(lat.getType()));
@@ -236,9 +240,8 @@ public class Asi {
             case SQUARE_BRACKETS_OPEN:
                 consume(TokenType.SQUARE_BRACKETS_OPEN);
                 attr = exp(attr);
-
                 attr = ase.vectorAccesValidation(attr);
-
+                attr = ase.cleanResultsAttr(attr);
                 consume(TokenType.SQUARE_BRACKETS_CLOSE);
                 break;
             default:
@@ -273,6 +276,7 @@ public class Asi {
     private Semantic llistaExpAux(Semantic attr) throws SyntacticException {
         switch (lat.getType()) {
             case ARGUMENT_SEPARATOR:
+                attr = ase.validateParam(attr);
                 consume(TokenType.ARGUMENT_SEPARATOR);
                 attr = llistaExpNonEmpty(attr);
                 break;
@@ -287,7 +291,8 @@ public class Asi {
             case COMPLEX_ARITHMETIC_OPERATOR:
             case AND:
                 attr = opb(attr);
-                if(ase.opsValidation(attr)==1) {
+                attr = ase.opsValidation(attr);
+                if((int)attr.getValue("OPS_VALIDATION") == 1){
                     Object var1;
                     if(attr.getValue("RESULT")==null){
                         var1 = attr.getValue("VARIABLE");
@@ -297,11 +302,13 @@ public class Asi {
                     attr.setValue("VAR_LEFT", var1);
                 }
                 attr =terme(attr);
-                if(ase.opsValidation(attr)==1) {
+                attr = ase.opsValidation(attr);
+                if((int)attr.getValue("OPS_VALIDATION") == 1){
                     Object var2 = attr.getValue("VARIABLE");
                     attr.setValue("VAR_RIGHT", var2);
                     attr = ase.opsOperation(attr);
                 }
+                attr = ase.cleanResultsAttr(attr);
                 break;
             default:
                 break;
@@ -331,16 +338,22 @@ public class Asi {
             case SIMPLE_ARITHMETIC_OPERATOR:
             case OR:
                 attr = ops(attr);
-                if(ase.opsValidation(attr)==1) {
+                attr = ase.opsValidation(attr);
+                int ok = (int) attr.getValue("OPS_VALIDATION");
+                if(ok ==1) {
                     Object var1 = attr.getValue("VARIABLE");
                     attr.setValue("VAR_LEFT", var1);
+                    attr.removeAttribute("OPS_VALIDATION");
                 }
                 attr =terme(attr);
-                if(ase.opsValidation(attr)==1) {
+                attr = ase.opsValidation(attr);
+                if((int)attr.getValue("OPS_VALIDATION") == 1){
                     Object var2 = attr.getValue("VARIABLE");
                     attr.setValue("VAR_RIGHT", var2);
+                    attr.removeAttribute("OPS_VALIDATION");
                    attr = ase.opsOperation(attr);
                 }
+                attr = ase.cleanResultsAttr(attr);
                 attr = llistaTermes(attr);
             default:
                 break;
@@ -406,6 +419,7 @@ public class Asi {
                 consume(TokenType.SIMPLE_TYPE);
 
                 attr.setValue(TokenType.VECTOR, vec);
+
                 break;
             default:
                 throw (ExceptionFactory.tipus(lat.getType()));
@@ -454,7 +468,7 @@ public class Asi {
         consume(TokenType.BRACKETS_OPEN);
         ase.addParamVars(func);
         ase.addNewFuncio(func);
-        //TODO SEMANTIC
+
         attr = llistaDecVar(attr);
         attr = llistaInst(attr);
         consume(TokenType.BRACKETS_CLOSE);
@@ -469,12 +483,11 @@ public class Asi {
         Funcio aux = (Funcio) attr.getValue(TokenType.FUNCIO);
         switch (lat.getType()) {
             case SIMPLE_TYPE:
-                attr.setAttributes(new Hashtable<String, TipusSimple>());
+                //attr.setAttributes(new Hashtable<String, TipusSimple>());
                 attr = tipus(attr);
                 param.setTipus((TipusSimple) attr.getValue(TokenType.SIMPLE_TYPE));
 
-                //tipus();
-                attr.setAttributes(new Hashtable<String, TipusPasParametre>());
+                //attr.setAttributes(new Hashtable<String, TipusPasParametre>());
                 attr = isRef(attr);
                 param.setTipusPasParametre((TipusPasParametre) attr.getValue(TokenType.AMPERSAND));
                 param.setNom(lat.getLexem());
@@ -485,11 +498,11 @@ public class Asi {
                 attr = llistaParamAux(attr);
                 break;
             case VECTOR:
-                attr.setAttributes(new Hashtable<String, TipusArray>());
+                //attr.setAttributes(new Hashtable<String, TipusArray>());
                 attr = tipus(attr);
                 param.setTipus((TipusArray) attr.getValue(TokenType.VECTOR));
 
-                attr.setAttributes(new Hashtable<String, TipusPasParametre>());
+                //attr.setAttributes(new Hashtable<String, TipusPasParametre>());
                 attr = isRef(attr);
                 param.setTipusPasParametre((TipusPasParametre) attr.getValue(TokenType.AMPERSAND));
                 param.setNom(lat.getLexem());
@@ -565,6 +578,7 @@ public class Asi {
                 attr.setValue(TokenType.MENTRE,lat.getLexem());
                 consume(TokenType.MENTRE);
                 attr = exp(attr);
+                //TODO codicion mal hecha...
                 if(!ase.isLogic(attr.getValue("RESULT"))){
                     System.err.println("While with non logic value");
                 }
@@ -576,7 +590,7 @@ public class Asi {
                 attr.setValue(TokenType.SI,lat.getLexem());
                 consume(TokenType.SI);
                 attr = exp(attr);
-                if(!ase.isLogic(attr.getValue("RESULT"))){
+                if(!ase.isLogic(attr.getValue("RESULT")==null ? attr.getValue("VARIABLE"):attr.getValue("RESULT"))){
                     System.err.println("Condition with non logic value");
                 }
                 consume(TokenType.LLAVORS);

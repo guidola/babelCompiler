@@ -47,7 +47,7 @@ public class TipusArray extends ITipus {
 		this.tipusElements = tipusElements;
 	}
 
-	/**<p> Obté el tipus dels elements del array </p>*/
+	/**<p> Obtï¿½ el tipus dels elements del array </p>*/
 	public ITipus getTipusElements() {
 		return tipusElements;
 	}
@@ -61,7 +61,7 @@ public class TipusArray extends ITipus {
 	}
 
 	/**
-	 * <p> Insereix una nova dimensió a la llista de dimensions </p>
+	 * <p> Insereix una nova dimensiï¿½ a la llista de dimensions </p>
 	 * @param (DimensioArray) dimensio
 	 */
 	public void inserirDimensio(DimensioArray dimensio) {
@@ -69,7 +69,7 @@ public class TipusArray extends ITipus {
 	}
 
 	/**
-	 * <p>Obté la dimensió que es troba la posició que indica el paràmetre </p>
+	 * <p>Obtï¿½ la dimensiï¿½ que es troba la posiciï¿½ que indica el parï¿½metre </p>
 	 * @param (int) index
 	 * @return DimensioArray
 	 */
@@ -78,7 +78,7 @@ public class TipusArray extends ITipus {
 	}
 
 	/**
-	 * <p>Obté el número de dimensions que conté el array.</p>
+	 * <p>Obtï¿½ el nï¿½mero de dimensions que contï¿½ el array.</p>
 	 * @return int
 	 */
 	public int getNumeroDimensions() {
@@ -87,7 +87,7 @@ public class TipusArray extends ITipus {
 
 	/**
 	 * <p>Compara l'objecte que se li pasa per paramtre amb l'objecte acual,
-	 * retorna cert si són iguals.</p>
+	 * retorna cert si sï¿½n iguals.</p>
 	 * @param (Object)obj
 	 * @return boolean
 	 */
@@ -107,7 +107,7 @@ public class TipusArray extends ITipus {
 	}
 
 	/**
-	 * <p>Obté tota la informació del objecte en format XML</p>
+	 * <p>Obtï¿½ tota la informaciï¿½ del objecte en format XML</p>
 	 * @return String
 	 */
 	public String toXml() {
