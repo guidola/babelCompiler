@@ -176,7 +176,6 @@ public class Asi {
             case IDENTIFIER:
                 String id = consume(TokenType.IDENTIFIER);
                 factor = factorIdSufix(id);
-
                 break;
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
@@ -190,18 +189,28 @@ public class Asi {
         attr = ase.updateParamTrace(attr, factor);
         return factor;
     }
-
+    //TODO
     private Semantic factorIdSufix(String id) throws SyntacticException {
         switch (lat.getType()) {
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
-                //PERQUE ES PERDEN ELS ATTR?
-
                 //TODO recover and pass to llistaExp the parameter definition for the func with id _id
-                Semantic parameters = llistaExp(attr); //TODO follow this call line and implement ase & mips stuff
+                LinkedList<Semantic> parameters = llistaExp(); //TODO follow this call line and implement ase & mips stuff
                 consume(TokenType.PARENTHESIS_CLOSE);
                 //TODO write all operations to call the func with _parameters if not_empty
                 return new Semantic(); // TODO return the return value of the func or where the return value is stored (reg)
+
+                /*consume(TokenType.PARENTHESIS_OPEN);
+                //PERQUE ES PERDEN ELS ATTR?
+
+                //TODO recover and pass to llistaExp the parameter definition for the func with id _id
+                attr.setValue("auxList",new ArrayList<ITipus>());
+                Semantic parameters = llistaExp(attr); //TODO follow this call line and implement ase & mips stuff
+                ase.validateFuncio(attr);
+                this.attr.removeAttribute("auxList");
+                consume(TokenType.PARENTHESIS_CLOSE);
+                //TODO write all operations to call the func with _parameters if not_empty
+                return parameters;*/
             default:
                 return isVector(id, Ase.LOAD);
         }
@@ -385,7 +394,6 @@ public class Asi {
             //probably is a function declaration badly typed if it is not inici
             case FUNCIO:
                 attr = decFunc(attr);
-                //ase.addNewFuncio((Funcio) attr.getValue(TokenType.FUNCIO));
                 llistaDecFunc();
                 break;
             default:
@@ -403,6 +411,7 @@ public class Asi {
 
 
         attr.setValue(TokenType.FUNCIO, func);
+        //TODO VALIDATE IF IS NECESSARY
         ArrayList<String> listParam = new ArrayList<>();
         attr.setValue("listParam",listParam);
         attr = llistaParam(attr);
@@ -493,11 +502,10 @@ public class Asi {
         return attr;
     }
 
-    private Semantic llistaInst() throws SyntacticException {
+    private void llistaInst() throws SyntacticException {
         /*inst();
         consume(TokenType.STATEMENT_SEPARATOR);
         llistaInstAux();*/
-        Semantic int_result = new Semantic();
         switch (lat.getType()) {
             case REPETIR:
             case MENTRE:
@@ -506,17 +514,17 @@ public class Asi {
             case ESCRIURE:
             case LLEGIR:
             case RETORNAR:
-                int_result = inst();
+                inst();
                 consume(TokenType.STATEMENT_SEPARATOR);
                 llistaInstAux();
                 break;
             default:
                 throw (ExceptionFactory.inst(lat.getType()));
         }
-        return int_result;
     }
 
     private void inst() throws SyntacticException {
+        Semantic condition;
         switch (lat.getType()) {
             case REPETIR:
                 consume(TokenType.REPETIR);
@@ -534,7 +542,16 @@ public class Asi {
                 break;
             case MENTRE:
                 consume(TokenType.MENTRE);
-                attr = exp();
+                String tag_mentre = MIPSFactory.setJumpPoint();
+                condition = exp();
+
+                String tag_fimentre;
+                if(condition.isEstatic()) {
+                    tag_fimentre = MIPSFactory.jumpIfFalse(condition.intValue());
+                } else {
+                    tag_fimentre = MIPSFactory.jumpIfFalse(condition.reg());
+                }
+
                 consume(TokenType.FER);
                 llistaInst();
                 MIPSFactory.unconditionalJump(tag_mentre);
@@ -544,8 +561,16 @@ public class Asi {
                 break;
             case SI:
                 consume(TokenType.SI);
-                attr = exp();
+                condition = exp();
                 consume(TokenType.LLAVORS);
+
+                String tag_sino;
+                if(condition.isEstatic()) {
+                    tag_sino = MIPSFactory.jumpIfFalse(condition.intValue());
+                } else {
+                    tag_sino = MIPSFactory.jumpIfFalse(condition.reg());
+                }
+
                 llistaInst();
                 String tag_fisi = MIPSFactory.unconditionalJump();
 
@@ -558,7 +583,7 @@ public class Asi {
             case IDENTIFIER:
                 Semantic target = variableStore();
                 consume(TokenType.ASSIGNMENT);
-                exp_result = exp();
+                Semantic exp_result = exp();
                 ase.validateAssigment(target,exp_result);
                 //TODO LEFT PART SAME TYPE OF EXP_RESULT
                 target.store(exp_result);
@@ -566,7 +591,7 @@ public class Asi {
             case ESCRIURE:
                 consume(TokenType.ESCRIURE);
                 consume(TokenType.PARENTHESIS_OPEN);
-                attr = llistaExpNonEmpty(attr);
+                ase.performWriteOperation(llistaExpNonEmpty(new LinkedList<>()));
                 consume(TokenType.PARENTHESIS_CLOSE);
                 break;
             case LLEGIR:
@@ -578,14 +603,12 @@ public class Asi {
             case RETORNAR:
                 // TODO implement retornar code generation ( stack management and so )
                 consume(TokenType.RETORNAR);
-                exp_result = exp();
-                ase.validateReturn(exp_result,actFunc);
+                Semantic exp_return = exp();
+                ase.validateReturn(exp_return,actFunc);
                 break;
             default:
                 throw (ExceptionFactory.inst(lat.getType()));
         }
-
-        return exp_result;
     }
 
     private void llistaInstAux() throws SyntacticException {
@@ -630,9 +653,9 @@ public class Asi {
         return isVector(id, Ase.LOAD);
     }
 
-    private void llistaVar() throws SyntacticException {
-        variable();
-        llistaVarAux();
+    private LinkedList<Semantic> llistaVar(LinkedList<Semantic> arguments) throws SyntacticException {
+        arguments.push(variable());
+        return llistaVarAux(arguments);
     }
 
     private LinkedList<Semantic> llistaVarAux(LinkedList<Semantic> arguments) throws SyntacticException {

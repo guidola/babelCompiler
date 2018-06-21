@@ -365,18 +365,18 @@ public void copy(Semantic exp) {
         }
 
     }
-    
+
     public String binaryOperator() {
         return (String) attributes.get("B_OPERATOR");
     }
 
-	public String reg() {
-		return (String) attributes.get("REG");
-	}
+    public String reg() {
+        return (String) attributes.get("REG");
+    }
 
-	public Boolean isEstatic() {
-		return (Boolean) attributes.get("ESTATIC");
-	}
+    public Boolean isEstatic() {
+        return (Boolean) attributes.get("ESTATIC");
+    }
 
     public boolean isNotAnOperation() {
         return getAttributes().get("B_OPERATOR") == null;
@@ -386,15 +386,15 @@ public void copy(Semantic exp) {
         return attributes.get("VALUE");
     }
 
-	public int intValue() {
-		return (int) attributes.get("VALUE");
-	}
+    public int intValue() {
+        return (int) attributes.get("VALUE");
+    }
 
-	public String strValue() {
-		return (String) attributes.get("VALUE");
-	}
+    public String strValue() {
+        return (String) attributes.get("VALUE");
+    }
 
-	public int logicValue() {
+    public int logicValue() {
         return attributes.get("VALUE").equals("cert") ? 0xFFFF : 0x0000;
     }
 
@@ -430,6 +430,21 @@ public void copy(Semantic exp) {
         return ((ITipus) attributes.get("TIPUS"));
     }
 
+    public String varName(){
+        return ((String) attributes.get("VAR_NAME"));
+    }
+
+    public String typeId() {
+
+        if(attributes.get("TIPUS") instanceof TipusSimple) {
+            return ((TipusSimple) attributes.get("TIPUS")).getNom();
+        } else if(attributes.get("TIPUS") instanceof TipusCadena){
+            return Ase.TIPUS_CADENA;
+        }
+
+        return "THIS_SHOULD_NEVER_HAPPEN";
+    }
+
     public boolean isString() {
         return type() instanceof TipusCadena;
     }
@@ -452,7 +467,7 @@ public void copy(Semantic exp) {
     }
 
 
-	public String toString() {
+    public String toString() {
 
 		return "VALUE: "+getValue("VALUE")+
 				   "; Estatic: "+getValue("ESTATIC")+

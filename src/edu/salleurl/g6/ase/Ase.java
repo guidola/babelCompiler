@@ -4,11 +4,15 @@ import edu.salleurl.g6.gc.MIPSFactory;
 import edu.salleurl.g6.model.TokenType;
 import taulasimbols.*;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+
 public class Ase {
 
     private static final int CONTEXT_GLOBAL = 0;
-    public static final String TIPUS_SIMPLE = "SENCER";
-    public static final String TIPUS_LOGIC = "LOGIC";
+    public static final String TIPUS_SIMPLE = "sencer";
+    public static final String TIPUS_LOGIC = "logic";
+    public static final String TIPUS_CADENA = "cadena";
     public static final String CERT = "cert";
     public static final String FALS = "fals";
     public static final boolean STORE = true;
@@ -260,7 +264,7 @@ public class Ase {
 
         MIPSFactory.writeString(MIPSFactory.TAG_LINEJUMP);
 
-    }
+    }*/
 
     public void performReadOperation(LinkedList<Semantic> arguments) {
 
@@ -353,4 +357,155 @@ public class Ase {
         }
         return attr;
     }
+
+
+    public Semantic notFoundVar(Variable var, String id) {
+
+        System.err.println("[ERR_SEM_8] L'identificador " + id + " no ha estat declarat");
+        var.setNom(id);
+        var.setTipus(new TipusIndefinit());
+        ts.obtenirBloc(CONTEXT_GLOBAL).inserirVariable(var);
+        //TODO change this for the proper error handling return
+        return new Semantic(var, ts.getBlocActual() == CONTEXT_GLOBAL);
+    }
+
+    public boolean isSimpleType(Object var) {
+        return var instanceof TipusSimple;
+    }
+
+    public boolean isLogic(Object var) {
+        if (var != null) {
+            if (isSimpleType(var)) {
+                if (((TipusSimple) var).getNom().equals("cert") || ((TipusSimple) var).getNom().equals("fals") || ((TipusSimple) var).getNom().equals("logic")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public Semantic updateParamTrace(Semantic attr, Semantic param){
+        ArrayList<ITipus> paramList = (ArrayList) attr.getValue("auxList");
+        if(paramList == null )return attr;
+        paramList.add(param.type());
+        attr.setValue("auxList",paramList);
+        return attr;
+    }
+
+    public boolean validateRelationalOp(Semantic left_side_exp,Semantic right_side_exp){
+        if(!left_side_exp.type().getNom().equals(TIPUS_SIMPLE) || !right_side_exp.type().getNom().equals(TIPUS_SIMPLE)){
+            System.err.println("[ERR_SEM_5] El tipus de l'expressió no és SENCER");
+            return false;
+        }
+        return true;
+    }
+
+    public void addParamVars(Funcio var) {
+        for (int i = 0; i < var.getNumeroParametres(); i++) {
+            if (var.obtenirParametre(i) != null) {
+                ts.obtenirBloc(ts.getBlocActual()).inserirVariable(var.obtenirParametre(i));
+            }
+        }
+    }
+
+    public Semantic addParam(Semantic attr) {
+        ArrayList<String> listParam = (ArrayList) attr.getValue("listParam");
+        Parametre param = (Parametre) attr.getValue("param");
+        Funcio aux = (Funcio) attr.getValue(TokenType.FUNCIO);
+        if (listParam.contains(param.getNom())) {
+            System.err.println("[ERR_SEM_4] Paràmetre " + param.getNom() + " doblement definit.");
+        } else {
+            listParam.add(param.getNom());
+            attr.setValue("listParam", listParam);
+            aux.inserirParametre(param);
+            attr.setValue(TokenType.FUNCIO, aux);
+        }
+        return attr;
+    }
+
+
+    public Boolean isVar(String id) {
+
+        Variable var = ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(id);
+        if (var == null) {
+            var = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id);
+            if (var == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void validateAssigment(Semantic leftPart, Semantic rightPart) {
+        if (!isVar(leftPart.varName())) {
+            System.err.println("[ERR_SEM_10] L'identificador [" + leftPart.varName() + "] en part esquerra d'assignació no és una variable");
+        } else {
+            if (!leftPart.type().getNom().equals(rightPart.type().getNom())) {
+                System.err.println("[ERR_SEM_11] La variable [" + leftPart.varName() +
+                        "] i l'expressió de assignació tenen tipus diferents. El tipus de la variable és [" + leftPart.type().getNom() +
+                        "] i el de l'expressió és [" + rightPart.type().getNom() + "]");
+            }
+        }
+
+    }
+
+    public void performWriteOperation(LinkedList<Semantic> arguments) {
+
+        for(Semantic argument : arguments) {
+            switch( argument.typeId() ) {
+                case TIPUS_SIMPLE:
+                    if(argument.isEstatic()){
+                        MIPSFactory.writeInt(argument.intValue());
+                    } else {
+                        MIPSFactory.writeInt(argument.reg());
+                    }
+                    break;
+                case TIPUS_LOGIC:
+                    if(argument.isEstatic()) {
+                        MIPSFactory.writeString(argument.intValue() == MIPSFactory.FALS ? MIPSFactory.TAG_FALS : MIPSFactory.TAG_CERT);
+                    } else {
+                        MIPSFactory.writeBoolean(argument.reg());
+                    }
+
+                    break;
+                case TIPUS_CADENA:
+                    MIPSFactory.writeString(argument.tag());
+                    break;
+            }
+        }
+
+        MIPSFactory.writeString(MIPSFactory.TAG_LINEJUMP);
+
+    }
+
+    public void validateReturn(Semantic exp_result, Funcio actFunc) {
+        if (actFunc == null) {
+            System.err.println("[ERR_SEM_18] Retornar fora de funció");
+        } else {
+            if (!actFunc.getTipus().getNom().equals(exp_result.type().getNom())) {
+                System.err.println("[ERR_SEM_17] La funcio [" + actFunc.getNom() + "] ha de ser del tipus [" + actFunc.getTipus().getNom() +
+                        "] però en l'expressió del seu valor el tpus és [" + exp_result.type().getNom() + "]");
+            }
+
+        }
+
+    }
+
+    public void validateFuncio(Semantic attr){
+        ArrayList<ITipus> paramList = (ArrayList) attr.getValue("auxList");
+        Funcio func = (Funcio) attr.getValue(TokenType.FUNCIO);
+
+        if(paramList.size()!= func.getNumeroParametres()){
+            System.err.println("[ERR_SEM_14] La funció en declaració té "+func.getNumeroParametres()+" paràmetres mentre que en ús té "+paramList.size());
+        }else{
+            int i = 0;
+            for(ITipus param:paramList){
+                if(!param.getNom().equals(func.obtenirParametre(i).getTipus().getNom())){
+                    System.err.println("[ERR_SEM_15] El tipus de paràmetre "+ i +" de la funció no coincideix amb el tipus en la seva declaració "+func.obtenirParametre(i).getTipus().getNom());
+                }
+                i++;
+            }
+        }
+    }
+
 }
