@@ -4,14 +4,11 @@ import edu.salleurl.g6.gc.MIPSFactory;
 import edu.salleurl.g6.model.TokenType;
 import taulasimbols.*;
 
-import java.util.LinkedList;
-
 public class Ase {
 
     private static final int CONTEXT_GLOBAL = 0;
     public static final String TIPUS_SIMPLE = "SENCER";
     public static final String TIPUS_LOGIC = "LOGIC";
-    public static final String TIPUS_CADENA = "CADENA";
     public static final String CERT = "cert";
     public static final String FALS = "fals";
     public static final boolean STORE = true;
@@ -26,8 +23,8 @@ public class Ase {
 
     public static String parseType(String lexem) {
 
-        if(lexem.equals("sencer")) return TIPUS_SIMPLE;
-        if(lexem.equals("logic")) return TIPUS_LOGIC;
+        if (lexem.equals("sencer")) return TIPUS_SIMPLE;
+        if (lexem.equals("logic")) return TIPUS_LOGIC;
 
         return null;
     }
@@ -42,7 +39,7 @@ public class Ase {
                 ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(var.getNom()) == null)
             ts.obtenirBloc(ts.getBlocActual()).inserirConstant(var);
         else
-            System.err.println("Existent constant! Value: " + var.getValor() + " Name: " + var.getNom());
+            System.err.println("[ERR_SEM_1] Constant " + var.getNom() + "  doblement definida");
 
     }
 
@@ -51,18 +48,68 @@ public class Ase {
                 ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(var.getNom()) == null)
             ts.obtenirBloc(ts.getBlocActual()).inserirVariable(var);
         else
-            System.err.println("Existent variable! Type: " + var.getTipus().getNom() + " Name: " + var.getNom());
+            System.err.println("[ERR_SEM_2] Variable " + var.getNom() + "  doblement definida");
 
 
     }
+
+    public boolean isInteger(Object var, String value) {
+        if (isSimpleType(var)) {
+            if (!isLogic(var) && !((TipusSimple) var).getNom().equals("sencer")) {
+                if (Integer.parseInt(value) >= 0) {
+                    return true;
+                } else {
+                    //ERROR INCORRECT VALUE FOR INTEGER
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    public Semantic addNewVarValue(Semantic attr) {
+        String name = (String) attr.getValue("ID_ASSIGMENT");
+        Object newTipus = attr.getValue("VARIABLE");
+        if (newTipus instanceof Parametre) newTipus = ((Parametre) newTipus).getTipus();
+        if (newTipus == null) newTipus = (ITipus) attr.getValue("RESULT");
+        Variable newVar = ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(name);
+        int blockActual = 1;
+        if (newVar == null) {
+            blockActual = 0;
+            newVar = ts.obtenirBloc(blockActual).obtenirVariable(name);
+        }
+
+        if (newVar != null) {
+            if (newVar.getTipus() instanceof TipusArray) {
+                if (attr.getValue("INDEX_VECTOR") != null) {
+                    int index = Integer.parseInt((String) attr.getValue("INDEX_VECTOR"));
+                    ((TipusArray) newVar.getTipus()).obtenirDimensio(index).setTipusLimit(((ITipus) newTipus));
+                    ts.obtenirBloc(blockActual).inserirVariable(newVar);
+                }
+            } else {
+
+                if (isInteger(newVar.getTipus(), newVar.getTipus().getNom()) && isInteger(newTipus, ((ITipus) newTipus).getNom()) || (newVar.getTipus().getNom().equals("sencer"))) {
+                    newVar.setTipus(((ITipus) newTipus));
+                    ts.obtenirBloc(blockActual).inserirVariable(newVar);
+                } else {
+                    if (isLogic(newVar.getTipus()) && isLogic(newTipus)) {
+                        newVar.setTipus(((ITipus) newTipus));
+                        ts.obtenirBloc(blockActual).inserirVariable(newVar);
+                    }
+                }
+            }
+        }
+        return attr;
+    }
+
 
     public Semantic getGlobalVariableOrConstant(String id) {
 
         Constant ct = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirConstant(id);
 
-        if(ct == null) {
+        if (ct == null) {
             Variable var = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id);
-            if(var == null) {
+            if (var == null) {
                 //TODO error - non declaraded variable or constant
 
                 //TODO change this for the proper error handling return
@@ -79,15 +126,12 @@ public class Ase {
 
         Constant ct = ts.obtenirBloc(ts.getBlocActual()).obtenirConstant(id);
 
-        if(ct == null) {
+        if (ct == null) {
             Variable var = ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(id);
-            if(var == null) {
+            if (var == null) {
                 Semantic s = getGlobalVariableOrConstant(id);
-                if(s == null) {
-                    //TODO error - non declaraded variable or constant
-
-                    //TODO change this for the proper error handling return
-                    return new Semantic();
+                if (s == null) {
+                    return notFoundVar(var, id);
                 }
 
                 return s;
@@ -102,19 +146,17 @@ public class Ase {
     public Semantic getArray(String id) {
         Variable var = ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(id);
         boolean isGlobal = ts.getBlocActual() == CONTEXT_GLOBAL;
-        if(var == null) {
+        if (var == null) {
             var = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id);
-            if(var == null) {
-                //TODO error - non declaraded variable or constant
+            if (var == null) {
 
-                //TODO change this for the proper error handling return
-                return new Semantic();
+                return notFoundVar(var, id);
             }
             isGlobal = true;
 
         }
 
-        if(var.getTipus() instanceof TipusArray) {
+        if (var.getTipus() instanceof TipusArray) {
             return new Semantic(var, isGlobal);
 
         }
@@ -135,8 +177,10 @@ public class Ase {
         cell.setEstatic(false);
         cell.setGlobal(vector.isGlobal());
 
-
-        if(attr.isEstatic()) {
+        if (!attr.type().getNom().equals(TIPUS_SIMPLE)) {
+            System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
+        }
+        if (attr.isEstatic()) {
             // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension )
             cell.isVectorIndexNonStatic(false);
             cell.setOffset(vector.offset() + attr.intValue() * vector.arrayType().getTamany());
@@ -162,7 +206,7 @@ public class Ase {
         cell.setType(vector.arrayType());
         cell.setEstatic(false);
 
-        if(expression.isEstatic()) {
+        if (expression.isEstatic()) {
             // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension
 
             cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), expression.intValue(), vector.isGlobal()));
@@ -177,10 +221,11 @@ public class Ase {
 
     public void addNewFuncio(Funcio var) {
         System.out.println("FUNCIO: " + var.getNom());
-        if (ts.obtenirBloc(ts.getBlocActual()).obtenirProcediment(var.getNom()) == null)
+        if (ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(var.getNom()) == null) {
+            ts.obtenirBloc(CONTEXT_GLOBAL).inserirProcediment(var);
             ts.obtenirBloc(ts.getBlocActual()).inserirProcediment(var);
-        else
-            System.err.println("Existent function! Type: " + var.getTipus().getNom() + " Name: " + var.getNom());
+        } else
+            System.err.println("[ERR_SEM_3] Funció doblement definida");
 
     }
 
@@ -191,28 +236,25 @@ public class Ase {
         System.out.println("Blocks availble: " + ts.getBlocActual());
     }
 
-    public void performWriteOperation(LinkedList<Semantic> arguments) {
-
-        for(Semantic argument : arguments) {
-            switch( argument.typeId() ) {
-                case TIPUS_SIMPLE:
-                    if(argument.isEstatic()){
-                        MIPSFactory.writeInt(argument.intValue());
-                    } else {
-                        MIPSFactory.writeInt(argument.reg());
-                    }
-                    break;
-                case TIPUS_LOGIC:
-                    if(argument.isEstatic()) {
-                        MIPSFactory.writeString(argument.intValue() == MIPSFactory.FALS ? MIPSFactory.TAG_FALS : MIPSFactory.TAG_CERT);
-                    } else {
-                        MIPSFactory.writeBoolean(argument.reg());
-                    }
-
-                    break;
-                case TIPUS_CADENA:
-                    MIPSFactory.writeString(argument.tag());
-                    break;
+    //TODO permanently remove this when validated the current logic does not need it.
+    /*public Semantic identifyTerm(Semantic attr) {
+        if (attr.getValue(TokenType.STRING) != null) {
+            String aux = (String) attr.getValue(TokenType.STRING);
+            TipusCadena string = new TipusCadena(aux, aux.length());
+            attr.setValue("VARIABLE", string);
+        } else if (attr.getValue(TokenType.INTEGER_CONSTANT) != null) {
+            String aux = (String) attr.getValue(TokenType.INTEGER_CONSTANT);
+            TipusSimple num = new TipusSimple(aux, 10000);
+            attr.setValue("VARIABLE", num);
+        } else if (attr.getValue(TokenType.LOGIC_CONSTANT) != null) {
+            String aux = (String) attr.getValue(TokenType.LOGIC_CONSTANT);
+            TipusSimple num = new TipusSimple(aux, 10000);
+            attr.setValue("VARIABLE", num);
+        }else if(attr.getValue(TokenType.IDENTIFIER) != null){
+            String aux = (String) attr.getValue(TokenType.IDENTIFIER);
+            Variable var =(Variable) ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(aux);
+            if(var!=null){
+                attr.setValue("VARIABLE", var);
             }
         }
 
@@ -258,7 +300,7 @@ public class Ase {
                     return 1;
                 }
             }
-        }else if(attr.getValue(TokenType.SIMPLE_ARITHMETIC_OPERATOR) != null) {
+        } else if (attr.getValue(TokenType.SIMPLE_ARITHMETIC_OPERATOR) != null) {
             String aux = (String) attr.getValue(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
             if (aux.equals("+")) {
                 Object aTipus = attr.getValue("VARIABLE");
@@ -286,7 +328,7 @@ public class Ase {
                 String opb = (String) attr.getValue(TokenType.COMPLEX_ARITHMETIC_OPERATOR);
                 String ops = (String) attr.getValue(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
                 Integer op = 0;
-                if(opb!=null) {
+                if (opb != null) {
                     if (opb.equals("*")) {
                         op = Integer.parseInt(((TipusSimple) var1).getNom()) * Integer.parseInt(((TipusSimple) var2).getNom());
 
@@ -297,10 +339,10 @@ public class Ase {
                             //ERROR AL DIVIDIR
                         }
                     }
-                }else if(ops!=null){
-                    if(ops.equals("+")){
+                } else if (ops != null) {
+                    if (ops.equals("+")) {
                         op = Integer.parseInt(((TipusSimple) var1).getNom()) + Integer.parseInt(((TipusSimple) var2).getNom());
-                    }else if(ops.equals("-")){
+                    } else if (ops.equals("-")) {
                         op = Integer.parseInt(((TipusSimple) var1).getNom()) - Integer.parseInt(((TipusSimple) var2).getNom());
                     }
                 }
@@ -311,7 +353,4 @@ public class Ase {
         }
         return attr;
     }
-
-
-
 }

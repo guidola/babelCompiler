@@ -202,12 +202,29 @@ public void copy(Semantic exp) {
 
         //TODO type check compatibility between operator and operand
 
-        if(operand.isEstatic()){
-            //TODO perform static operation
-        } else {
-            result.setRegister(MIPSFactory.performOpu(this.opu(), operand.reg()));
-        }
+        if(operand.type() instanceof TipusSimple && this.type() instanceof TipusSimple) {
 
+
+            if (operand.isEstatic()) {
+                if (this.opu().equals("not")) {
+                    if (operand.intValue() == MIPSFactory.CERT || operand.intValue() == MIPSFactory.FALS) {
+                        result.setValue(operand.intValue() == MIPSFactory.CERT ? MIPSFactory.FALS : MIPSFactory.CERT);
+                    } else {
+                        if (operand.intValue() == 0 || operand.intValue() == 1) {
+                            result.setValue(operand.intValue() == 1 ? 0 : 1);
+                        }
+                    }
+                } else {
+                    if (this.opu().equals("-")) {
+                        result.setValue(operand.intValue() * (-1));
+                    }
+                }
+            } else {
+                result.setRegister(MIPSFactory.performOpu(this.opu(), operand.reg()));
+            }
+        }else{
+            //System.err.
+        }
         return result;
     }
 
@@ -218,7 +235,7 @@ public void copy(Semantic exp) {
         Semantic result = new Semantic();
 
         //TODO perform type checks and operator compatibility checks
-
+        //if(this.intValue())
         result.setEstatic(this.isEstatic() && operand2.isEstatic());
         result.setType(this.type());
 
@@ -411,17 +428,6 @@ public void copy(Semantic exp) {
 
     public ITipus type() {
         return ((ITipus) attributes.get("TIPUS"));
-    }
-
-    public String typeId() {
-
-        if(attributes.get("TIPUS") instanceof TipusSimple) {
-            return ((TipusSimple) attributes.get("TIPUS")).getNom();
-        } else if(attributes.get("TIPUS") instanceof TipusCadena){
-            return Ase.TIPUS_CADENA;
-        }
-
-        return "THIS_SHOULD_NEVER_HAPPEN";
     }
 
     public boolean isString() {
