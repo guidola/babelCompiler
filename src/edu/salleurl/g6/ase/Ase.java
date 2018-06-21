@@ -2,16 +2,18 @@ package edu.salleurl.g6.ase;
 
 import edu.salleurl.g6.gc.MIPSFactory;
 import edu.salleurl.g6.model.TokenType;
-import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 import taulasimbols.*;
+
+import java.util.LinkedList;
 
 public class Ase {
 
     private static final int CONTEXT_GLOBAL = 0;
     public static final String TIPUS_SIMPLE = "SENCER";
     public static final String TIPUS_LOGIC = "LOGIC";
+    public static final String TIPUS_CADENA = "CADENA";
     public static final String CERT = "cert";
-    public static final String FALS = "false";
+    public static final String FALS = "fals";
     public static final boolean STORE = true;
     public static final boolean LOAD = false;
 
@@ -189,31 +191,58 @@ public class Ase {
         System.out.println("Blocks availble: " + ts.getBlocActual());
     }
 
-    //TODO permanently remove this when validated the current logic does not need it.
-    /*public Semantic identifyTerm(Semantic attr) {
-        if (attr.getValue(TokenType.STRING) != null) {
-            String aux = (String) attr.getValue(TokenType.STRING);
-            TipusCadena string = new TipusCadena(aux, aux.length());
-            attr.setValue("VARIABLE", string);
-        } else if (attr.getValue(TokenType.INTEGER_CONSTANT) != null) {
-            String aux = (String) attr.getValue(TokenType.INTEGER_CONSTANT);
-            TipusSimple num = new TipusSimple(aux, 10000);
-            attr.setValue("VARIABLE", num);
-        } else if (attr.getValue(TokenType.LOGIC_CONSTANT) != null) {
-            String aux = (String) attr.getValue(TokenType.LOGIC_CONSTANT);
-            TipusSimple num = new TipusSimple(aux, 10000);
-            attr.setValue("VARIABLE", num);
-        }else if(attr.getValue(TokenType.IDENTIFIER) != null){
-            String aux = (String) attr.getValue(TokenType.IDENTIFIER);
-            Variable var =(Variable) ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(aux);
-            if(var!=null){
-                attr.setValue("VARIABLE", var);
-            }
+    public void performWriteOperation(LinkedList<Semantic> arguments) {
 
+        for(Semantic argument : arguments) {
+            switch( argument.typeId() ) {
+                case TIPUS_SIMPLE:
+                    if(argument.isEstatic()){
+                        MIPSFactory.writeInt(argument.intValue());
+                    } else {
+                        MIPSFactory.writeInt(argument.reg());
+                    }
+                    break;
+                case TIPUS_LOGIC:
+                    if(argument.isEstatic()) {
+                        MIPSFactory.writeString(argument.intValue() == MIPSFactory.FALS ? MIPSFactory.TAG_FALS : MIPSFactory.TAG_CERT);
+                    } else {
+                        MIPSFactory.writeBoolean(argument.reg());
+                    }
+
+                    break;
+                case TIPUS_CADENA:
+                    MIPSFactory.writeString(argument.tag());
+                    break;
+            }
         }
 
-        return attr;
-    }*/
+        MIPSFactory.writeString(MIPSFactory.TAG_LINEJUMP);
+
+    }
+
+    public void performReadOperation(LinkedList<Semantic> arguments) {
+
+        for(Semantic argument : arguments) {
+            switch(argument.typeId()) {
+                case TIPUS_SIMPLE:
+                    if(argument.isVectorIndexNonStatic()){
+                        MIPSFactory.readInt(argument.reg(), argument.isGlobal());
+                    } else {
+                        MIPSFactory.readInt(argument.offset(), argument.isGlobal());
+                    }
+                    break;
+
+                case TIPUS_LOGIC:
+                    if(argument.isVectorIndexNonStatic()){
+                        MIPSFactory.readBool(argument.reg(), argument.isGlobal());
+                    } else {
+                        MIPSFactory.readBool(argument.offset(), argument.isGlobal());
+                    }
+                    break;
+            }
+        }
+
+    }
 
     public int opsValidation(Semantic attr) {
         if (attr.getValue(TokenType.COMPLEX_ARITHMETIC_OPERATOR) != null) {
@@ -282,4 +311,7 @@ public class Ase {
         }
         return attr;
     }
+
+
+
 }

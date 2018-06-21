@@ -7,6 +7,7 @@ public class RegisterHandler {
     private LinkedList<String> registers;
     public static final String FP = "$fp";
     public static final String GP = "$gp";
+    public static final String V0 = "$v0";
 
 
     public RegisterHandler() {
@@ -37,7 +38,7 @@ public class RegisterHandler {
     }
 
     private boolean isReservedRegister(String register) {
-        return register.equals(GP) || register.equals(FP);
+        return register.equals(GP) || register.equals(FP) || register.equals(V0);
     }
 
     public void returnRegister(String register) {

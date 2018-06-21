@@ -9,6 +9,7 @@ import edu.salleurl.g6.model.*;
 import taulasimbols.*;
 
 import java.util.Hashtable;
+import java.util.LinkedList;
 
 public class Asi {
     private Ase ase;
@@ -191,10 +192,10 @@ public class Asi {
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
                 //TODO recover and pass to llistaExp the parameter definition for the func with id _id
-                Semantic parameters = llistaExp(attr); //TODO follow this call line and implement ase & mips stuff
+                LinkedList<Semantic> parameters = llistaExp(); //TODO follow this call line and implement ase & mips stuff
                 consume(TokenType.PARENTHESIS_CLOSE);
                 //TODO write all operations to call the func with _parameters if not_empty
-                return parameters;
+                return new Semantic(); // TODO return the return value of the func or where the return value is stored (reg)
             default:
                 return isVector(id, Ase.LOAD);
         }
@@ -236,7 +237,10 @@ public class Asi {
         return variable;
     }
 
-    private Semantic llistaExp(Semantic attr) throws SyntacticException {
+    private LinkedList<Semantic> llistaExp() throws SyntacticException {
+
+        LinkedList<Semantic> arguments = new LinkedList<>();
+
         switch (lat.getType()) {
             case SIMPLE_ARITHMETIC_OPERATOR:
             case NOT:
@@ -245,30 +249,28 @@ public class Asi {
             case STRING:
             case IDENTIFIER:
             case PARENTHESIS_OPEN:
-                attr = llistaExpNonEmpty(attr);
-                break;
+                return llistaExpNonEmpty(arguments);
             default:
                 break;
         }
-        return attr;
+        return arguments;
     }
 
-    private Semantic llistaExpNonEmpty(Semantic attr) throws SyntacticException {
-        attr = exp();
-        attr = llistaExpAux(attr);
-        return attr;
+    private LinkedList<Semantic> llistaExpNonEmpty(LinkedList<Semantic> arguments) throws SyntacticException {
+        arguments.push(exp());
+        return llistaExpAux(arguments);
     }
 
-    private Semantic llistaExpAux(Semantic attr) throws SyntacticException {
+    private LinkedList<Semantic> llistaExpAux(LinkedList<Semantic> arguments) throws SyntacticException {
         switch (lat.getType()) {
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);
-                attr = llistaExpNonEmpty(attr);
+                arguments = llistaExpNonEmpty(arguments);
                 break;
             default:
                 break;
         }
-        return attr;
+        return arguments;
     }
 
     private Semantic factorAux(Semantic accum_exp) throws SyntacticException {
@@ -504,26 +506,62 @@ public class Asi {
     }
 
     private void inst() throws SyntacticException {
+
+        Semantic condition;
+
         switch (lat.getType()) {
             case REPETIR:
                 consume(TokenType.REPETIR);
+                String tag_repetir = MIPSFactory.setJumpPoint();
                 llistaInst();
                 consume(TokenType.FINS);
-                attr = exp();
+
+                condition = exp();
+
+                if(condition.isEstatic()) {
+                    MIPSFactory.jumpIfTrue(tag_repetir, condition.intValue());
+                } else {
+                    MIPSFactory.jumpIfTrue(tag_repetir, condition.reg());
+                }
                 break;
             case MENTRE:
                 consume(TokenType.MENTRE);
-                attr = exp();
+                String tag_mentre = MIPSFactory.setJumpPoint();
+                condition = exp();
+
+                String tag_fimentre;
+                if(condition.isEstatic()) {
+                    tag_fimentre = MIPSFactory.jumpIfFalse(condition.intValue());
+                } else {
+                    tag_fimentre = MIPSFactory.jumpIfFalse(condition.reg());
+                }
+
                 consume(TokenType.FER);
                 llistaInst();
+                MIPSFactory.unconditionalJump(tag_mentre);
+                MIPSFactory.setJumpPoint(tag_fimentre);
+
                 consume(TokenType.FIMENTRE);
                 break;
             case SI:
                 consume(TokenType.SI);
-                attr = exp();
+                condition = exp();
                 consume(TokenType.LLAVORS);
+
+                String tag_sino;
+                if(condition.isEstatic()) {
+                    tag_sino = MIPSFactory.jumpIfFalse(condition.intValue());
+                } else {
+                    tag_sino = MIPSFactory.jumpIfFalse(condition.reg());
+                }
+
                 llistaInst();
+                String tag_fisi = MIPSFactory.unconditionalJump();
+
+                MIPSFactory.setJumpPoint(tag_sino);
                 hasSino();
+                MIPSFactory.setJumpPoint(tag_fisi);
+
                 consume(TokenType.FISI);
                 break;
             case IDENTIFIER:
@@ -535,16 +573,17 @@ public class Asi {
             case ESCRIURE:
                 consume(TokenType.ESCRIURE);
                 consume(TokenType.PARENTHESIS_OPEN);
-                attr = llistaExpNonEmpty(attr);
+                ase.performWriteOperation(llistaExpNonEmpty(new LinkedList<>()));
                 consume(TokenType.PARENTHESIS_CLOSE);
                 break;
             case LLEGIR:
                 consume(TokenType.LLEGIR);
                 consume(TokenType.PARENTHESIS_OPEN);
-                llistaVar();
+                ase.performReadOperation(llistaVar(new LinkedList<>()));
                 consume(TokenType.PARENTHESIS_CLOSE);
                 break;
             case RETORNAR:
+                // TODO implement retornar code generation ( stack management and so )
                 consume(TokenType.RETORNAR);
                 attr = exp();
                 break;
@@ -595,19 +634,21 @@ public class Asi {
         return isVector(id, Ase.LOAD);
     }
 
-    private void llistaVar() throws SyntacticException {
-        variable();
-        llistaVarAux();
+    private LinkedList<Semantic> llistaVar(LinkedList<Semantic> arguments) throws SyntacticException {
+        arguments.push(variable());
+        return llistaVarAux(arguments);
     }
 
-    private void llistaVarAux() throws SyntacticException {
+    private LinkedList<Semantic> llistaVarAux(LinkedList<Semantic> arguments) throws SyntacticException {
         switch (lat.getType()) {
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);
-                llistaVar();
+                llistaVar(arguments);
                 break;
             default:
                 break;
         }
+
+        return arguments;
     }
 }

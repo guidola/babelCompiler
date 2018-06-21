@@ -1,5 +1,8 @@
 package edu.salleurl.g6.gc;
 
+import edu.salleurl.g6.ase.Ase;
+import sun.jvm.hotspot.asm.Register;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -15,8 +18,12 @@ public class MIPSFactory {
     public static final int CERT = 0xffff;
     public static final int FALS = 0x0000;
 
+    public static final String TAG_CERT = "cert";
+    public static final String TAG_FALS = "fals";
+    public static final String TAG_LINEJUMP = "linejump";
+
     // since MIPS instructions refering to comparison understand true as 0x01 and false as 0x00 static true and false
-    // for relation operations will follow the same logic.
+    // for relation operations will follow the same logic
     public static final int CMP_OK = 0x01;
     public static final int CMP_KO = 0x00;
 
@@ -48,6 +55,10 @@ public class MIPSFactory {
     }
 
     public static void init() {
+        out.println(".data");
+        out.println(TAG_CERT + ": .asciiz " + Ase.CERT);
+        out.println(TAG_FALS + ": .asciiz " + Ase.FALS);
+        out.println(TAG_LINEJUMP + ": .asciiz " + "\n");
         out.println(".text");
         defineErrorRoutine();
         out.print("main: ");
@@ -389,6 +400,25 @@ public class MIPSFactory {
 
     /** INSTRUCTIONS **/
 
+    private static void bnez(String label, String r1) {
+
+        out.println("bnez " + r1 + ", " + label);
+        registers.returnRegister(r1);
+    }
+
+    private static String beqz(String r1) {
+
+        String label = tags.getCondTag();
+        out.println("beqz " + r1 + ", " + label);
+        registers.returnRegister(r1);
+        return label;
+
+    }
+
+    private static void writeJumpTag(String label) {
+        out.println(label + ":");
+    }
+
 
 
     /** DATA DECLARATIONS **/
@@ -585,5 +615,97 @@ public class MIPSFactory {
     public static void performAssignment(int offset, boolean isGlobal, String value) {
         sw(value, offset, isGlobal);
     }
+
+    public static void jumpIfTrue(String label, int literal) {
+        bnez(label, li(literal));
+    }
+
+    public static void jumpIfTrue(String label, String r1) {
+        bnez(label, r1);
+    }
+
+    public static String jumpIfFalse(int literal) {
+        return beqz(li(literal));
+    }
+
+    public static String jumpIfFalse(String r1) {
+        return beqz(r1);
+    }
+
+    public static void setJumpPoint(String label) {
+        writeJumpTag(label);
+    }
+
+    public static String setJumpPoint() {
+        String label = tags.getCondTag();
+        writeJumpTag(label);
+        return label;
+    }
+
+    public static String unconditionalJump() {
+        String label = tags.getCondTag();
+        out.println("j " + label);
+        return label;
+    }
+
+    public static void unconditionalJump(String label) {
+        out.println("j " + label);
+    }
+
+    public static void writeString(String tag_to_print) {
+        out.println("li $v0, 0x04");
+        out.println("la $a0, " + tag_to_print);
+        out.println("syscall");
+    }
+
+    public static void writeInt(int value) {
+        out.println("li $v0, 0x01");
+        out.println("li $a0, " + value);
+        out.println("syscall");
+    }
+
+    public static void writeInt(String r1) {
+        out.println("li $v0, 0x01");
+        out.println("lw $a0, " + r1);
+        out.println("syscall");
+        registers.returnRegister(r1);
+    }
+
+    public static void writeBoolean(String r1) {
+        String end_of_cert = tags.getCondTag();
+        out.println("beqz " + r1 + ", " + end_of_cert);
+        writeString(TAG_CERT);
+        String end_of_false = unconditionalJump();
+        setJumpPoint(end_of_cert);
+        writeString(TAG_FALS);
+        setJumpPoint(end_of_false);
+        registers.returnRegister(r1);
+    }
+
+    public static void readInput() {
+        out.println("li $v0, 0x05");
+        out.println("syscall");
+    }
+
+    public static void readInt(String r_offset, boolean isGlobal) {
+        readInput();
+        sw(RegisterHandler.V0, r_offset, isGlobal);
+    }
+
+    public static void readInt(int offset, boolean isGlobal) {
+        readInput();
+        sw(RegisterHandler.V0, offset, isGlobal);
+    }
+
+    public static void readBool(String r_offset, boolean isGlobal) {
+        readInput();
+        sw(simpleToLogic(RegisterHandler.V0), r_offset, isGlobal);
+    }
+
+    public static void readBool(int offset, boolean isGlobal) {
+        readInput();
+        sw(simpleToLogic(RegisterHandler.V0), offset, isGlobal);
+    }
+
 
 }

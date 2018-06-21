@@ -413,6 +413,17 @@ public void copy(Semantic exp) {
         return ((ITipus) attributes.get("TIPUS"));
     }
 
+    public String typeId() {
+
+        if(attributes.get("TIPUS") instanceof TipusSimple) {
+            return ((TipusSimple) attributes.get("TIPUS")).getNom();
+        } else if(attributes.get("TIPUS") instanceof TipusCadena){
+            return Ase.TIPUS_CADENA;
+        }
+
+        return "THIS_SHOULD_NEVER_HAPPEN";
+    }
+
     public boolean isString() {
         return type() instanceof TipusCadena;
     }

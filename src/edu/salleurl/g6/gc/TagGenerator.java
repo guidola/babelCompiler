@@ -8,7 +8,7 @@ public class TagGenerator {
 
 
     public String getFuncTag() {
-        return "func" + nextTag++ + ": ";
+        return "func" + nextTag++;
     }
 
     public String getConversionTag() {
@@ -16,7 +16,11 @@ public class TagGenerator {
     }
 
     public String getLoopTag() {
-        return "loop" + nextTag++ + ": ";
+        return "loop" + nextTag++;
+    }
+
+    public String getCondTag() {
+        return "tag" + nextTag++;
     }
 
     public String getStringTag() {
