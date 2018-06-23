@@ -1,6 +1,7 @@
 package edu.salleurl.g6.gc;
 
 import edu.salleurl.g6.ase.Ase;
+import edu.salleurl.g6.ase.Semantic;
 //import sun.jvm.hotspot.asm.Register;
 
 import java.io.File;
@@ -707,5 +708,24 @@ public class MIPSFactory {
         sw(simpleToLogic(RegisterHandler.V0), offset, isGlobal);
     }
 
+
+
+    /** SOME HELPERS THAT DO NOT  GENERATE ASSEMBLY CODE **/
+
+    public static void returnRegister(Semantic context) {
+        if (context.hasRegister()) {
+            registers.returnRegister(context.reg());
+        }
+    }
+
+    public static void returnRegisters(Semantic context1, Semantic context2) {
+        if (context1.hasRegister()) {
+            registers.returnRegister(context1.reg());
+        }
+
+        if (context2.hasRegister()) {
+            registers.returnRegister(context2.reg());
+        }
+    }
 
 }
