@@ -237,7 +237,6 @@ public class Asi {
                 variable = ase.getVariableOrConstant(id);
                 variable.isVectorIndexNonStatic(false);
                 if(variable.isEstatic()){
-                    //TODO prompt error if variable is CONST and we are doing a STORE action
                     if(variable.isString()) {
                         variable.setTag(MIPSFactory.defineString(variable.strValue()));
                     }
@@ -380,6 +379,7 @@ public class Asi {
                 vec.setTipusElements(new TipusSimple(arrayType, arrayType.equals(Ase.TIPUS_SIMPLE) ?
                         MIPSFactory.TIPUS_SIMPLE_SIZE : MIPSFactory.TIPUS_LOGIC_SIZE));
                 vec.setTamany(n_cells * vec.getTipusElements().getTamany());
+                vec.setNom(Ase.TIPUS_ARRAY);
                 return vec;
 
             default:

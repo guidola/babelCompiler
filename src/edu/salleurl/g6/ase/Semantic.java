@@ -215,8 +215,6 @@ public class Semantic {
         return null;
     }public Semantic performRelationalOperation(Semantic right_side_exp) {
 
-        //TODO perform type checks
-
         Semantic result = new Semantic();
 
         result.setType(new TipusSimple(Ase.TIPUS_LOGIC, MIPSFactory.TIPUS_LOGIC_SIZE));
@@ -255,7 +253,7 @@ public class Semantic {
         //TODO type check compatibility between operator and operand
 
         // by checking that theoperandis of simpletypewe are protecting against trying to operate on undefined
-if(operand.isOfSimpleType()) {
+        if(operand.isOfSimpleType()) {
 
             if (operand.isEstatic()) {
                 if (this.opu().equals("not")) {
@@ -263,25 +261,25 @@ if(operand.isOfSimpleType()) {
                         result.setValue(operand.intValue() == MIPSFactory.CERT ? MIPSFactory.FALS : MIPSFactory.CERT);
                     } else  if(operand.isInt()){
                         result.setValue(operand.intValue() == 0 ? 1 : 0);
+                    }else{
+                        System.err.println("[ERR_SEM_X] El operand no es de tipus sencer o logic");
                     }
                 } else {
                     if (this.opu().equals("-")) {
                         if(operand.isInt()) {
                             result.setValue(operand.intValue() * (-1));
                         } else {
-                            // TODO error attempting to -  a non integer term  (bool)
+                            System.err.println("[ERR_SEM_X] La operació "+ this.opu()+" requereix un operand sencer" );
                         }
                     }
                 }
             } else {
                 if(this.opu().equals("-") && operand.isBool()) {
-                    //TODO error attempting to - a non integer term (bool)
+                    System.err.println("[ERR_SEM_X] La operació "+ this.opu()+" requereix un operand sencer i ha obtingut un operand logic" );
                 } else {
                     result.setRegister(MIPSFactory.performOpu(this.opu(), operand.reg()));
                 }
             }
-        } else {
-            //System.err.
         }
         return result;
     }
@@ -297,7 +295,7 @@ if(operand.isOfSimpleType()) {
         Semantic result = new Semantic();
 
         //TODO perform type checks and operator compatibility checks
-
+        if((this.isEstatic() && operand2.isEstatic())  &&(this.isSameTypeTo(operand2)))
         result.setEstatic(this.isEstatic() && operand2.isEstatic());
         result.setType(this.type());
 
@@ -305,19 +303,23 @@ if(operand.isOfSimpleType()) {
         if (result.isEstatic()) {
             switch (this.binaryOperator()) {
                 case "+":
-                    result.setValue(this.intValue() + operand2.intValue());
+                    if(this.isInt() && operand2.isInt())
+                        result.setValue(this.intValue() + operand2.intValue());
                     break;
 
                 case "-":
-                    result.setValue(this.intValue() - operand2.intValue());
+                    if(this.isInt() && operand2.isInt())
+                        result.setValue(this.intValue() - operand2.intValue());
                     break;
 
                 case "*":
-                    result.setValue(this.intValue() * operand2.intValue());
+                    if(this.isInt() && operand2.isInt())
+                        result.setValue(this.intValue() * operand2.intValue());
                     break;
 
                 case "/":
-                    result.setValue(this.intValue() / operand2.intValue());
+                    if(this.isInt() && operand2.isInt())
+                        result.setValue(this.intValue() / operand2.intValue());
                     break;
 
                 case "and":
@@ -411,24 +413,34 @@ if(operand.isOfSimpleType()) {
     }
 
     public void store(Semantic expression) {
-        if (!expression.isTipusIndefinit()) {
-            if (this.isVectorIndexNonStatic()) {
-                if (expression.isEstatic()) {
-                    MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
-                } else {
-                    MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.reg());
-                }
-            } else {
-                if (expression.isEstatic()) {
-                    MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue());
-                } else {
-                    MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg());
-                }
-            }
 
+        // if receiver or value is undefined return and do nothing
+        if(this.isUndefined() && expression.isUndefined()){
+            return;
+        } else if(this.isUndefined()) {
+            MIPSFactory.returnRegister(expression);
+            return;
+        } else if(expression.isUndefined()) {
+            MIPSFactory.returnRegister(this);
+            return;
+        }
+
+        if(this.isVectorIndexNonStatic()){
+            if(expression.isEstatic()){
+                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
+            } else {
+                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.reg());
+            }
+        } else {
+            if(expression.isEstatic()){
+                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue());
+            } else {
+                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg());
+            }
         }
 
     }
+
 
 
     public String binaryOperator() {

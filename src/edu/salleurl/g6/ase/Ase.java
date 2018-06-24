@@ -13,6 +13,7 @@ public class Ase {
     public static final String TIPUS_SIMPLE = "sencer";
     public static final String TIPUS_LOGIC = "logic";
     public static final String TIPUS_CADENA = "cadena";
+    public static final String TIPUS_ARRAY = "array";
     public static final String CERT = "cert";
     public static final String FALS = "fals";
     public static final boolean STORE = true;
@@ -349,6 +350,8 @@ public class Ase {
                         MIPSFactory.readBool(argument.offset(), argument.isGlobal());
                     }
                     break;
+                default:
+                    System.err.println("[ERR_SEM_X] El tipus de la expressió en LLEGIR no és simple o no és logic");
             }
         }
 
@@ -585,25 +588,61 @@ public class Ase {
                 System.err.println("[ERR_SEM_14] La funció en declaració té " + actFunc.getNumeroParametres() +
                         " paràmetres mentre que en ús té " + parameters.size());
             } else {
-                int i = 0;
+                int i = actFunc.getNumeroParametres()-1;
                 for (Semantic param : parameters) {
-                    ITipus type;
-                    String tipusNom;
-                    if (param.type() instanceof TipusArray) {
-                        type = param.arrayType();
-                        tipusNom = ((TipusArray) actFunc.obtenirParametre(i).getTipus()).getTipusElements().getNom();
-
-
-                    } else {
-                        type = param.type();
-                        tipusNom = actFunc.obtenirParametre(i).getTipus().getNom();
+                    String type =  param.typeName();
+                    String  tipusNom = getTypeName(actFunc.obtenirParametre(i).getTipus());
+                    if(param.isArray() && actFunc.obtenirParametre(i).getTipus() instanceof  TipusArray){
+                        if(param.arrayUpperBound()!= (int) ((TipusArray) actFunc.obtenirParametre(i).getTipus()).obtenirDimensio(0).getLimitSuperior()){
+                            System.err.println("[ERR_SEM_X] La mida del vector, paramàtre " + (i+1) +
+                                    " de la funció no coincideix amb la dimensió de la seva declaració " +
+                                    (int) ((TipusArray) actFunc.obtenirParametre(i).getTipus()).obtenirDimensio(0).getLimitSuperior());
+                        }
+                    }else{
+                        if(!type.equals(tipusNom))
+                            System.err.println("[ERR_SEM_15] El tipus de paràmetre " + (i+1) +
+                                " de la funció no coincideix amb el tipus en la seva declaració "+ actFunc.obtenirParametre(i).getTipus().getNom());
                     }
-                    if (!type.getNom().equals(tipusNom)) {
-                        System.err.println("[ERR_SEM_15] El tipus de paràmetre " + i +
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    /*if (!type.equals(tipusNom)) {
+
+                        System.err.println("[ERR_SEM_15] El tipus de paràmetre " + (i+1) +
                                 " de la funció no coincideix amb el tipus en la seva declaració " +
-                                actFunc.obtenirParametre(i).getTipus().getNom());
+                                tipusNom);
                     }
-                    i++;
+                    if(param.isArray() && actFunc.obtenirParametre(i).getTipus() instanceof TipusArray){
+                        if(param.arrayUpperBound()!= (int) ((TipusArray) actFunc.obtenirParametre(i).getTipus()).obtenirDimensio(0).getLimitSuperior()){
+                            System.err.println("[ERR_SEM_X] La mida del vector, paramàtre " + (i+1) +
+                                    " de la funció no coincideix amb la dimensió de la seva declaració " +
+                                    tipusNom);
+                        }
+                    }else{
+                        System.err.println("[ERR_SEM_15] El tipus de paràmetre " + (i+1) +
+                                " de la funció no coincideix amb el tipus en la seva declaració "+ actFunc.obtenirParametre(i).getTipus().getNom());
+                    }*/
+                    i--;
                 }
             }
         }
@@ -643,5 +682,17 @@ public class Ase {
             System.err.println("[ERR_SEM_X] Funció no declarada.");
         }
         return func;
+    }
+
+
+    public String getTypeName(ITipus tipus){
+        if (tipus instanceof TipusSimple) {
+            return tipus.getNom();
+        } else if (tipus instanceof TipusCadena) {
+            return tipus.getNom();
+        }else if(tipus instanceof TipusArray){
+            return ((TipusArray) tipus).getTipusElements().getNom();
+        }
+        return "THIS_SHOULD_NEVER_HAPPEN";
     }
 }
