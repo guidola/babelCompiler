@@ -411,24 +411,25 @@ if(operand.isOfSimpleType()) {
     }
 
     public void store(Semantic expression) {
-
-        if(this.isVectorIndexNonStatic()){
-            if(expression.isEstatic()){
-                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
+        if (!expression.isTipusIndefinit()) {
+            if (this.isVectorIndexNonStatic()) {
+                if (expression.isEstatic()) {
+                    MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
+                } else {
+                    MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.reg());
+                }
             } else {
-                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.reg());
+                if (expression.isEstatic()) {
+                    MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue());
+                } else {
+                    MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg());
+                }
             }
-        } else {
-            if(expression.isEstatic()){
-                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue());
-            } else {
-                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg());
-            }
-        }
 
         }
 
     }
+
 
     public String binaryOperator() {
         return (String) attributes.get("B_OPERATOR");
