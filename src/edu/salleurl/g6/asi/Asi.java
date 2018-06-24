@@ -76,10 +76,11 @@ public class Asi {
                 consume(TokenType.ASSIGNMENT);
 
                 Semantic exp_result = exp();
-                //TODO check that expression is estatic and did not fail to get any of the constants that may form it
-                //TODO check that the exp is of type _cadena or _simple
+                exp_result = ase.validationConst(exp_result);
                 constant.setTipus(exp_result.type());
-                constant.setValor(exp_result.constValue());
+
+                if(!exp_result.isTipusIndefinit())
+                    constant.setValor(exp_result.constValue());
 
                 consume(TokenType.STATEMENT_SEPARATOR);
                 ase.addNewConstant(constant);
@@ -169,7 +170,8 @@ public class Asi {
                 // a string cannot be operated with and hence a exp containing a string as factor can only be a single
                 // factor expression, ergo define string in assembly and return label to refer to in print operations
                 factor.setEstatic(true);
-                factor.setType(new TipusCadena());
+                factor.setType(new TipusCadena(Ase.TIPUS_CADENA,0));
+                factor.setValue(lat.getLexem());
                 attr.setTag(MIPSFactory.defineString(consume(TokenType.STRING)));
                 attr.setValue("STRING",factor.type());
                 break;
@@ -189,28 +191,26 @@ public class Asi {
         attr = ase.updateParamTrace(attr, factor);
         return factor;
     }
-    //TODO
+
     private Semantic factorIdSufix(String id) throws SyntacticException {
         switch (lat.getType()) {
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
                 //TODO recover and pass to llistaExp the parameter definition for the func with id _id
                 LinkedList<Semantic> parameters = llistaExp(); //TODO follow this call line and implement ase & mips stuff
+
+                ase.validateFuncio(parameters,ase.getFuncio(id));
                 consume(TokenType.PARENTHESIS_CLOSE);
                 //TODO write all operations to call the func with _parameters if not_empty
-                return new Semantic(); // TODO return the return value of the func or where the return value is stored (reg)
+                return new Semantic(ase.getFuncio(id),false); // TODO return the return value of the func or where the return value is stored (reg)
 
                 /*consume(TokenType.PARENTHESIS_OPEN);
-                //PERQUE ES PERDEN ELS ATTR?
 
-                //TODO recover and pass to llistaExp the parameter definition for the func with id _id
-                attr.setValue("auxList",new ArrayList<ITipus>());
-                Semantic parameters = llistaExp(attr); //TODO follow this call line and implement ase & mips stuff
+               attr.setValue("auxList",new ArrayList<ITipus>());
+                Semantic parameters = llistaExp(attr);
                 ase.validateFuncio(attr);
                 this.attr.removeAttribute("auxList");
-                consume(TokenType.PARENTHESIS_CLOSE);
-                //TODO write all operations to call the func with _parameters if not_empty
-                return parameters;*/
+                consume(TokenType.PARENTHESIS_CLOSE);return parameters;*/
             default:
                 return isVector(id, Ase.LOAD);
         }
@@ -406,6 +406,7 @@ public class Asi {
         consume(TokenType.FUNCIO);
         Funcio func = new Funcio();
         func.setNom(lat.getLexem());
+
         consume(TokenType.IDENTIFIER);
         consume(TokenType.PARENTHESIS_OPEN);
 
@@ -424,9 +425,8 @@ public class Asi {
         consume(TokenType.SIMPLE_TYPE);
         consume(TokenType.BRACKETS_OPEN);
         ase.addParamVars(func);
-        ase.addNewFuncio(func);
+        func = ase.addNewFuncio(func);
         actFunc = func;
-        //TODO SEMANTIC
         OffsetFactory.reset();
         llistaDecVar();
         llistaInst();
@@ -446,13 +446,14 @@ public class Asi {
 
                 attr = isRef(attr);
                 param.setTipusPasParametre((TipusPasParametre) attr.getValue(TokenType.AMPERSAND));
-                attr.removeAttribute(TokenType.AMPERSAND);
+
+                //ase.validateTipusPas((String )attr.getValue(TokenType.AMPERSAND), param.getTipus());
                 param.setNom(lat.getLexem());
                 consume(TokenType.IDENTIFIER);
                 attr.setValue("param",param);
 
                 attr = ase.addParam(attr);
-
+                attr.removeAttribute(TokenType.AMPERSAND);
 
 
                 attr = llistaParamAux(attr);
@@ -463,11 +464,12 @@ public class Asi {
 
                 attr = isRef(attr);
                 param.setTipusPasParametre((TipusPasParametre) attr.getValue(TokenType.AMPERSAND));
-                attr.removeAttribute(TokenType.AMPERSAND);
+
                 param.setNom(lat.getLexem());
                 consume(TokenType.IDENTIFIER);
                 attr.setValue("param",param);
                 attr = ase.addParam(attr);
+                attr.removeAttribute(TokenType.AMPERSAND);
                 attr = llistaParamAux(attr);
                 break;
             default:
@@ -533,6 +535,7 @@ public class Asi {
                 consume(TokenType.FINS);
 
                 condition = exp();
+                ase.isLogicExp(condition);
 
                 if(condition.isEstatic()) {
                     MIPSFactory.jumpIfTrue(tag_repetir, condition.intValue());
@@ -544,6 +547,7 @@ public class Asi {
                 consume(TokenType.MENTRE);
                 String tag_mentre = MIPSFactory.setJumpPoint();
                 condition = exp();
+                ase.isLogicExp(condition);
 
                 String tag_fimentre;
                 if(condition.isEstatic()) {
@@ -562,6 +566,7 @@ public class Asi {
             case SI:
                 consume(TokenType.SI);
                 condition = exp();
+                ase.isLogicExp(condition);
                 consume(TokenType.LLAVORS);
 
                 String tag_sino;
@@ -584,9 +589,8 @@ public class Asi {
                 Semantic target = variableStore();
                 consume(TokenType.ASSIGNMENT);
                 Semantic exp_result = exp();
-                ase.validateAssigment(target,exp_result);
-                //TODO LEFT PART SAME TYPE OF EXP_RESULT
-                target.store(exp_result);
+                if(ase.validateAssigment(target,exp_result))
+                    target.store(exp_result);
                 break;
             case ESCRIURE:
                 consume(TokenType.ESCRIURE);

@@ -1,84 +1,104 @@
 package edu.salleurl.g6.ase; /**
  * This type was created in VisualAge.
  */
- 
+
 import edu.salleurl.g6.gc.MIPSFactory;
 import taulasimbols.*;
 
 import java.util.Hashtable;
- 
+
 public class Semantic {
-	private Hashtable attributes;
-/**
- * Semantic constructor comment.
- */
-public Semantic() {
-	super();
-    attributes = new Hashtable();
-}
+    private Hashtable attributes;
 
-public Semantic(Variable var, boolean isGlobal) {
+    /**
+     * Semantic constructor comment.
+     */
+    public Semantic() {
+        super();
+        attributes = new Hashtable();
+    }
 
-    attributes = new Hashtable();
-    setValue("OFFSET", var.getDesplacament());
-    setValue("TIPUS", var.getTipus());
-    setValue("IS_GLOBAL", isGlobal);
-    setValue("ESTATIC", false);
+    public Semantic(Variable var, boolean isGlobal) {
 
-}
+        attributes = new Hashtable();
+        setValue("OFFSET", var.getDesplacament());
+        setValue("TIPUS", var.getTipus());
+        setValue("IS_GLOBAL", isGlobal);
+        setValue("ESTATIC", false);
 
-public Semantic(Constant ct, boolean isGlobal) {
+    }
 
-    attributes = new Hashtable();
-    setValue("VALUE", ct.getValor());
-    setValue("TIPUS", ct.getTipus());
-    setValue("IS_GLOBAL", isGlobal);
-    setValue("ESTATIC", true);
+    public Semantic(Constant ct, boolean isGlobal) {
 
-}
+        attributes = new Hashtable();
+        setValue("VALUE", ct.getValor());
+        setValue("TIPUS", ct.getTipus());
+        setValue("IS_GLOBAL", isGlobal);
+        setValue("ESTATIC", true);
 
-/**
- * This method was created in VisualAge.
- * @return java.util.Hashtable
- */
-public Hashtable getAttributes() {
-	return attributes;
-}
-/**
- * This method was created in VisualAge.
- * @return java.lang.Object
- * @param attributeID java.lang.Object
- */
-public Object getValue(Object attributeID) {
-	return getAttributes().get(attributeID);
-}
-/**
- * This method was created in VisualAge.
- */
-public void removeAll() {
-	getAttributes().clear();
-}
-/**
- * This method was created in VisualAge.
- * @param attributeID java.lang.Object
- */
-public void removeAttribute(Object attributeID) {
-	getAttributes().remove(attributeID);
-}
-/**
- * This method was created in VisualAge.
- * @param newValue java.util.Hashtable
- */
-public void setAttributes(Hashtable newValue) {
-	this.attributes = newValue;
-}
+    }
+
+    public Semantic(Funcio func, boolean isGlobal) {
+
+        attributes = new Hashtable();
+        setValue("TIPUS", func.getTipus());
+        setValue("IS_GLOBAL", isGlobal);
+        setValue("ESTATIC", true);
+
+    }
+
     /**
      * This method was created in VisualAge.
+     *
+     * @return java.util.Hashtable
+     */
+    public Hashtable getAttributes() {
+        return attributes;
+    }
+
+    /**
+     * This method was created in VisualAge.
+     *
      * @param attributeID java.lang.Object
+     * @return java.lang.Object
+     */
+    public Object getValue(Object attributeID) {
+        return getAttributes().get(attributeID);
+    }
+
+    /**
+     * This method was created in VisualAge.
+     */
+    public void removeAll() {
+        getAttributes().clear();
+    }
+
+    /**
+     * This method was created in VisualAge.
+     *
+     * @param attributeID java.lang.Object
+     */
+    public void removeAttribute(Object attributeID) {
+        getAttributes().remove(attributeID);
+    }
+
+    /**
+     * This method was created in VisualAge.
+     *
+     * @param newValue java.util.Hashtable
+     */
+    public void setAttributes(Hashtable newValue) {
+        this.attributes = newValue;
+    }
+
+    /**
+     * This method was created in VisualAge.
+     *
+     * @param attributeID    java.lang.Object
      * @param attributeValue java.lang.Object
      */
     public void setValue(Object attributeID, Object attributeValue) {
-        getAttributes().put(attributeID,attributeValue);
+        getAttributes().put(attributeID, attributeValue);
     }
 
     public void setValue(Object value) {
@@ -100,7 +120,7 @@ public void setAttributes(Hashtable newValue) {
     public void setTag(String tag) {
         getAttributes().put("TAG", tag);
     }
-    
+
     public void setBOperator(String operator) {
         getAttributes().put("B_OPERATOR", operator);
     }
@@ -125,31 +145,40 @@ public void setAttributes(Hashtable newValue) {
         getAttributes().put("IS_VECTOR_INDEX_NON_STATIC", isVector);
     }
 
-public void copy(Semantic exp) {
+    public boolean isTipusIndefinit() {
+        return this.type() instanceof TipusIndefinit;
 
-	if (exp.getAttributes().containsKey("VALUE"))
-		setValue("VALUE",exp.getValue("VALUE"));
-	if (exp.getAttributes().containsKey("ESTATIC"))
-		setValue("ESTATIC",exp.getValue("ESTATIC"));
-	if (exp.getAttributes().containsKey("TIPUS"))
-		setValue("TIPUS",exp.getValue("TIPUS"));
-	if (exp.getAttributes().containsKey("OPERADOR"))
-		setValue("OPERADOR",exp.getValue("OPERADOR"));
-	if (exp.getAttributes().containsKey("COMPARACIO"))
-		setValue("COMPARACIO",exp.getValue("COMPARACIO"));
-	if (exp.getAttributes().containsKey("LINEA"))
-		setValue("LINEA",exp.getValue("LINEA"));
-	if (exp.getAttributes().containsKey("COLUMNA"))
-		setValue("COLUMNA",exp.getValue("COLUMNA"));
-	if (exp.getAttributes().containsKey("REG"))
-		setValue("REG",exp.getValue("REG"));
-	if (exp.getAttributes().containsKey("TOKEN"))
-		setValue("TOKEN",exp.getValue("TOKEN"));
+    }
 
-	}
-	
-	private int performComparison(int left_side, String operator, int right_side) {
-        switch(operator) {
+    public boolean isArray() {
+        return this.type() instanceof TipusArray;
+    }
+
+    public void copy(Semantic exp) {
+
+        if (exp.getAttributes().containsKey("VALUE"))
+            setValue("VALUE", exp.getValue("VALUE"));
+        if (exp.getAttributes().containsKey("ESTATIC"))
+            setValue("ESTATIC", exp.getValue("ESTATIC"));
+        if (exp.getAttributes().containsKey("TIPUS"))
+            setValue("TIPUS", exp.getValue("TIPUS"));
+        if (exp.getAttributes().containsKey("OPERADOR"))
+            setValue("OPERADOR", exp.getValue("OPERADOR"));
+        if (exp.getAttributes().containsKey("COMPARACIO"))
+            setValue("COMPARACIO", exp.getValue("COMPARACIO"));
+        if (exp.getAttributes().containsKey("LINEA"))
+            setValue("LINEA", exp.getValue("LINEA"));
+        if (exp.getAttributes().containsKey("COLUMNA"))
+            setValue("COLUMNA", exp.getValue("COLUMNA"));
+        if (exp.getAttributes().containsKey("REG"))
+            setValue("REG", exp.getValue("REG"));
+        if (exp.getAttributes().containsKey("TOKEN"))
+            setValue("TOKEN", exp.getValue("TOKEN"));
+
+    }
+
+    private int performComparison(int left_side, String operator, int right_side) {
+        switch (operator) {
             case "==":
                 return left_side == right_side ? MIPSFactory.CMP_OK : MIPSFactory.CMP_KO;
             case "!=":
@@ -167,7 +196,7 @@ public void copy(Semantic exp) {
         }
     }
 
-	public Semantic performRelationalOperation(Semantic right_side_exp) {
+    public Semantic performRelationalOperation(Semantic right_side_exp) {
 
         //TODO perform type checks
 
@@ -175,14 +204,14 @@ public void copy(Semantic exp) {
         result.setEstatic(this.isEstatic() && right_side_exp.isEstatic());
         result.setType(new TipusSimple(Ase.TIPUS_LOGIC, MIPSFactory.TIPUS_LOGIC_SIZE));
 
-        if(this.isEstatic()) {
-            if(right_side_exp.isEstatic()) {
+        if (this.isEstatic()) {
+            if (right_side_exp.isEstatic()) {
                 result.setValue(performComparison(this.intValue(), this.opRel(), right_side_exp.intValue()));
             } else {
                 result.setRegister(MIPSFactory.performComparison(this.intValue(), this.opRel(), right_side_exp.reg()));
             }
         } else {
-            if(right_side_exp.isEstatic()) {
+            if (right_side_exp.isEstatic()) {
                 result.setRegister(MIPSFactory.performComparison(this.reg(), this.opRel(), right_side_exp.intValue()));
             } else {
                 result.setRegister(MIPSFactory.performComparison(this.reg(), this.opRel(), right_side_exp.reg()));
@@ -192,9 +221,9 @@ public void copy(Semantic exp) {
         return result;
     }
 
-	public Semantic performUnaryOperation(Semantic operand) {
+    public Semantic performUnaryOperation(Semantic operand) {
 
-        if(this.opu() == null) return operand;
+        if (this.opu() == null) return operand;
 
         Semantic result = new Semantic();
         result.setType(operand.type());
@@ -202,7 +231,7 @@ public void copy(Semantic exp) {
 
         //TODO type check compatibility between operator and operand
 
-        if(operand.type() instanceof TipusSimple && this.type() instanceof TipusSimple) {
+        if (operand.type() instanceof TipusSimple && this.type() instanceof TipusSimple) {
 
 
             if (operand.isEstatic()) {
@@ -222,15 +251,15 @@ public void copy(Semantic exp) {
             } else {
                 result.setRegister(MIPSFactory.performOpu(this.opu(), operand.reg()));
             }
-        }else{
+        } else {
             //System.err.
         }
         return result;
     }
 
-	public Semantic performBinaryOperation(Semantic operand2) {
+    public Semantic performBinaryOperation(Semantic operand2) {
 
-        if(this.isNotAnOperation()) return operand2;
+        if (this.isNotAnOperation()) return operand2;
 
         Semantic result = new Semantic();
 
@@ -240,8 +269,8 @@ public void copy(Semantic exp) {
         result.setType(this.type());
 
         // if it gets to this point everything is semantically correct
-        if(result.isEstatic()) {
-            switch(this.binaryOperator()) {
+        if (result.isEstatic()) {
+            switch (this.binaryOperator()) {
                 case "+":
                     result.setValue(this.intValue() + operand2.intValue());
                     break;
@@ -268,12 +297,12 @@ public void copy(Semantic exp) {
 
             }
         } else {
-            switch(this.binaryOperator()) {
+            switch (this.binaryOperator()) {
                 case "+":
-                    if(this.isEstatic()){
+                    if (this.isEstatic()) {
                         result.setRegister(MIPSFactory.performAdd(this.intValue(), operand2.reg()));
                     } else {
-                        if(operand2.isEstatic()) {
+                        if (operand2.isEstatic()) {
                             result.setRegister(MIPSFactory.performAdd(this.reg(), operand2.intValue()));
                         } else {
                             result.setRegister(MIPSFactory.performAdd(this.reg(), operand2.reg()));
@@ -282,10 +311,10 @@ public void copy(Semantic exp) {
                     break;
 
                 case "-":
-                    if(this.isEstatic()){
+                    if (this.isEstatic()) {
                         result.setRegister(MIPSFactory.performSub(this.intValue(), operand2.reg()));
                     } else {
-                        if(operand2.isEstatic()) {
+                        if (operand2.isEstatic()) {
                             result.setRegister(MIPSFactory.performSub(this.reg(), operand2.intValue()));
                         } else {
                             result.setRegister(MIPSFactory.performSub(this.reg(), operand2.reg()));
@@ -294,10 +323,10 @@ public void copy(Semantic exp) {
                     break;
 
                 case "*":
-                    if(this.isEstatic()){
+                    if (this.isEstatic()) {
                         result.setRegister(MIPSFactory.performMul(this.intValue(), operand2.reg()));
                     } else {
-                        if(operand2.isEstatic()) {
+                        if (operand2.isEstatic()) {
                             result.setRegister(MIPSFactory.performMul(this.reg(), operand2.intValue()));
                         } else {
                             result.setRegister(MIPSFactory.performMul(this.reg(), operand2.reg()));
@@ -306,10 +335,10 @@ public void copy(Semantic exp) {
                     break;
 
                 case "/":
-                    if(this.isEstatic()){
+                    if (this.isEstatic()) {
                         result.setRegister(MIPSFactory.performDiv(this.intValue(), operand2.reg()));
                     } else {
-                        if(operand2.isEstatic()) {
+                        if (operand2.isEstatic()) {
                             result.setRegister(MIPSFactory.performDiv(this.reg(), operand2.intValue()));
                         } else {
                             result.setRegister(MIPSFactory.performDiv(this.reg(), operand2.reg()));
@@ -318,10 +347,10 @@ public void copy(Semantic exp) {
                     break;
 
                 case "or":
-                    if(this.isEstatic()){
+                    if (this.isEstatic()) {
                         result.setRegister(MIPSFactory.performOr(this.intValue(), operand2.reg(), this.isInt()));
                     } else {
-                        if(operand2.isEstatic()) {
+                        if (operand2.isEstatic()) {
                             result.setRegister(MIPSFactory.performOr(this.reg(), operand2.intValue(), this.isInt()));
                         } else {
                             result.setRegister(MIPSFactory.performOr(this.reg(), operand2.reg(), this.isInt()));
@@ -330,10 +359,10 @@ public void copy(Semantic exp) {
                     break;
 
                 case "and":
-                    if(this.isEstatic()){
+                    if (this.isEstatic()) {
                         result.setRegister(MIPSFactory.performAnd(this.intValue(), operand2.reg(), this.isInt()));
                     } else {
-                        if(operand2.isEstatic()) {
+                        if (operand2.isEstatic()) {
                             result.setRegister(MIPSFactory.performAnd(this.reg(), operand2.intValue(), this.isInt()));
                         } else {
                             result.setRegister(MIPSFactory.performAnd(this.reg(), operand2.reg(), this.isInt()));
@@ -341,7 +370,7 @@ public void copy(Semantic exp) {
                     }
                     break;
 
-            }   
+            }
         }
 
 
@@ -349,19 +378,21 @@ public void copy(Semantic exp) {
     }
 
     public void store(Semantic expression) {
+        if (!expression.isTipusIndefinit()) {
+            if (this.isVectorIndexNonStatic()) {
+                if (expression.isEstatic()) {
+                    MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
+                } else {
+                    MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.reg());
+                }
+            } else {
+                if (expression.isEstatic()) {
+                    MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue());
+                } else {
+                    MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg());
+                }
+            }
 
-        if(this.isVectorIndexNonStatic()){
-            if(expression.isEstatic()){
-                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
-            } else {
-                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.reg());
-            }
-        } else {
-            if(expression.isEstatic()){
-                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue());
-            } else {
-                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg());
-            }
         }
 
     }
@@ -430,19 +461,42 @@ public void copy(Semantic exp) {
         return ((ITipus) attributes.get("TIPUS"));
     }
 
-    public String varName(){
+    public String varName() {
         return ((String) attributes.get("VAR_NAME"));
     }
 
     public String typeId() {
 
-        if(attributes.get("TIPUS") instanceof TipusSimple) {
+        if (attributes.get("TIPUS") instanceof TipusSimple) {
             return ((TipusSimple) attributes.get("TIPUS")).getNom();
-        } else if(attributes.get("TIPUS") instanceof TipusCadena){
+        } else if (attributes.get("TIPUS") instanceof TipusCadena) {
             return Ase.TIPUS_CADENA;
         }
 
         return "THIS_SHOULD_NEVER_HAPPEN";
+    }
+    public String typeName() {
+
+        if (this.type() instanceof TipusSimple) {
+            return this.type().getNom();
+        } else if (this.type() instanceof TipusCadena) {
+            return this.type().getNom();
+        }else if(this.type() instanceof TipusArray){
+            return this.arrayType().getNom();
+        }
+        return "THIS_SHOULD_NEVER_HAPPEN";
+    }
+
+    public boolean isSameTypeTo(Semantic right_part) {
+        if (!this.isTipusIndefinit() && !right_part.isTipusIndefinit()) {
+            if (right_part.type() instanceof TipusSimple) {
+                return this.type().getNom().equals(right_part.type().getNom());
+            } else if (right_part.type() instanceof TipusArray) {
+                return this.arrayType().getNom().equals(right_part.arrayType().getNom());
+            }
+            return false;
+        }
+        return true;
     }
 
     public boolean isString() {
@@ -469,15 +523,15 @@ public void copy(Semantic exp) {
 
     public String toString() {
 
-		return "VALUE: "+getValue("VALUE")+
-				   "; Estatic: "+getValue("ESTATIC")+
-				   "; Tipus: "+getValue("TIPUS")+
-                   "; Registre: "+getValue("REG")+
-				   "; Oper: "+getValue("OPERADOR")+
-				   "; Comp: "+getValue("COMPARACIO")+
-				   "; Linea: "+getValue("LINEA")+
-				   "; Columna: "+getValue("COLUMNA")
-				   ;
-	}
+        return "VALUE: " + getValue("VALUE") +
+                "; Estatic: " + getValue("ESTATIC") +
+                "; Tipus: " + getValue("TIPUS") +
+                "; Registre: " + getValue("REG") +
+                "; Oper: " + getValue("OPERADOR") +
+                "; Comp: " + getValue("COMPARACIO") +
+                "; Linea: " + getValue("LINEA") +
+                "; Columna: " + getValue("COLUMNA")
+                ;
+    }
 
 }
