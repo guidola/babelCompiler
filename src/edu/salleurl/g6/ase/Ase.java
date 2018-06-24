@@ -153,7 +153,6 @@ public class Ase {
                 if (s == null) {
                     return notFoundVar(id);
                 }
-
                 return s;
             }
 
@@ -169,7 +168,6 @@ public class Ase {
         if (var == null) {
             var = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id);
             if (var == null) {
-
                 return notFoundVar(id);
             }
             isGlobal = true;
@@ -184,50 +182,41 @@ public class Ase {
         return new Semantic(var,isGlobal);
     }
 
-    public Funcio getFuncio(String id) {
-        Funcio func = (Funcio) ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id);
-        if (func == null) {
-            func = new Funcio(id, new TipusIndefinit());
-            System.err.println("[ERR_SEM_X] Funció no declarada.");
-        }
-        return func;
-    }
-    public boolean validateArrayBounds(Semantic var, Semantic index){
-        if(index.intValue() <= var.arrayUpperBound() &&
-                index.intValue() >= var.arrayLowerBound()){
-            return true;
-        }
-        System.err.println("[ERR_SEM_X] L'index esta fora dels límits del vector.");
-        return false;
+        //TODO handle case where trying to access variable which is not a vector
+        return new Semantic();
     }
 
-    public Semantic validateArrayAccessAndGetOffset(String id, Semantic attr) {
+    public Semantic validateArrayAccessAndGetOffset(String id, Semantic index) {
 
         //TODO validate it is actually an array
         Semantic vector = getArray(id);
         if(!vector.isTipusIndefinit()) {
-            //TODO evaluate index type is SIMPLE
+            // if vector is undefined ergo, not found, then return an undefined Semantic
+        if(vector.isUndefined()) {
+            MIPSFactory.returnRegister(index);
+            return undefined();
+        }
 
             Semantic cell = new Semantic();
             cell.setType(vector.arrayType());
             cell.setEstatic(false);
             cell.setGlobal(vector.isGlobal());
 
-            if (!attr.type().getNom().equals(TIPUS_SIMPLE)) {
-                System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
-            } else {
-
-
-                if (attr.isEstatic()) {
-                    // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension )
-                    if(validateArrayBounds(vector,attr)){
-                        cell.isVectorIndexNonStatic(false);
-                        cell.setOffset(vector.offset() + attr.intValue() * vector.arrayType().getTamany());
-                    }
-                } else {
-                    cell.isVectorIndexNonStatic(true);
-                    cell.setRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offset(), attr.reg(), vector.arrayLowerBound(),
-                            vector.arrayUpperBound()));
+        //if index is not int then set index to 0 and static
+        if (!index.isInt()) {
+            if(!index.isUndefined()) {
+            System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
+        }else {
+        index.setValue(0);
+            index.setEstatic(true);
+        }if (index.isEstatic()) {
+            // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension )
+            if(validateArrayBounds(vector,attr)){cell.isVectorIndexNonStatic(false);
+            cell.setOffset(vector.offset() + index.intValue() * vector.arrayType().getTamany());}
+        } else {
+            cell.isVectorIndexNonStatic(true);
+            cell.setRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offset(), index.reg(), vector.arrayLowerBound(),
+                    vector.arrayUpperBound()));
 
                 }
             }
@@ -236,25 +225,41 @@ public class Ase {
         return vector;
     }
 
+    private Semantic undefined() {
+        Semantic undefined = new Semantic();
+        undefined.setType(new TipusIndefinit());
+        undefined.setEstatic(true);
+        return undefined;
+    }
 
-    public Semantic validateArrayAccessAndLoadCell(String id, Semantic expression) {
+    public Semantic validateArrayAccessAndLoadCell(String id, Semantic index) {
 
-        //TODO validate it is actually an array
         Semantic vector = getArray(id);
-        if(!vector.isTipusIndefinit()) {
-            //TODO evaluate index type is SIMPLE
+if(!vector.isTipusIndefinit()) {
+        if(vector.isUndefined()) {
+            MIPSFactory.returnRegister(index);
+            return undefined();
+        }
+
+        if (! index .isInt()) {
+            if(!index.isUndefined()) {
+                System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
+            }
+            index.setValue(0);
+            index.setEstatic(true);
+        }
 
             Semantic cell = new Semantic();
             cell.setType(vector.arrayType());
             cell.setEstatic(false);
 
-            if (expression.isEstatic()) {
-                // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension
-                if(validateArrayBounds(vector,expression))
-                    cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), expression.intValue(), vector.isGlobal()));
-            } else {
-                cell.setRegister(MIPSFactory.validateAndLoadArrayCell(vector.offset(), expression.reg(), vector.arrayLowerBound(),
-                        vector.arrayUpperBound(), vector.isGlobal()));
+        if (index.isEstatic()) {
+            // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension
+
+if(validateArrayBounds(vector,expression))            cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), index.intValue(), vector.isGlobal()));
+        } else {
+            cell.setRegister(MIPSFactory.validateAndLoadArrayCell(vector.offset(), index.reg(), vector.arrayLowerBound(),
+                    vector.arrayUpperBound(), vector.isGlobal()));
 
             }
             return cell;
@@ -413,7 +418,7 @@ public class Ase {
         System.err.println("[ERR_SEM_8] L'identificador " + id + " no ha estat declarat");
         Variable var = new Variable(id, new TipusIndefinit(), 4);
         ts.obtenirBloc(CONTEXT_GLOBAL).inserirVariable(var);
-
+        //TODO change this for the proper error handling return
         return new Semantic(var, ts.getBlocActual() == CONTEXT_GLOBAL);
     }
 

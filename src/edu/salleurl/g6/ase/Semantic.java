@@ -196,13 +196,36 @@ public class Semantic {
         }
     }
 
-    public Semantic performRelationalOperation(Semantic right_side_exp) {
+	public Semantic handleOperationWithUndefined(Semantic op1, Semantic op2) {
+
+        if (op1.isUndefined() && op2.isUndefined()) {
+            Semantic result = new Semantic();
+            result.setEstatic(true);
+            result.setType(this.type());
+            return result;
+        } else if(op1.isUndefined()) {
+            MIPSFactory.returnRegister(op1);
+            return op2;
+        } else if(op2.isUndefined()) {
+            MIPSFactory.returnRegister(op1);
+            return op1;
+        }
+
+        // THIS SHOULD NEVER HAPPEN
+        return null;
+    }public Semantic performRelationalOperation(Semantic right_side_exp) {
 
         //TODO perform type checks
 
         Semantic result = new Semantic();
-        result.setEstatic(this.isEstatic() && right_side_exp.isEstatic());
+
         result.setType(new TipusSimple(Ase.TIPUS_LOGIC, MIPSFactory.TIPUS_LOGIC_SIZE));
+
+        if(this.isUndefined() || right_side_exp.isUndefined()) {
+            return handleOperationWithUndefined(this, right_side_exp);
+        }
+
+        result.setEstatic(this.isEstatic() && right_side_exp.isEstatic());
 
         if (this.isEstatic()) {
             if (right_side_exp.isEstatic()) {
@@ -231,25 +254,31 @@ public class Semantic {
 
         //TODO type check compatibility between operator and operand
 
-        if (operand.type() instanceof TipusSimple && this.type() instanceof TipusSimple) {
-
+        // by checking that theoperandis of simpletypewe are protecting against trying to operate on undefined
+if(operand.isOfSimpleType()) {
 
             if (operand.isEstatic()) {
                 if (this.opu().equals("not")) {
-                    if (operand.intValue() == MIPSFactory.CERT || operand.intValue() == MIPSFactory.FALS) {
+                    if (operand.isBool()) {
                         result.setValue(operand.intValue() == MIPSFactory.CERT ? MIPSFactory.FALS : MIPSFactory.CERT);
-                    } else {
-                        if (operand.intValue() == 0 || operand.intValue() == 1) {
-                            result.setValue(operand.intValue() == 1 ? 0 : 1);
-                        }
+                    } else  if(operand.isInt()){
+                        result.setValue(operand.intValue() == 0 ? 1 : 0);
                     }
                 } else {
                     if (this.opu().equals("-")) {
-                        result.setValue(operand.intValue() * (-1));
+                        if(operand.isInt()) {
+                            result.setValue(operand.intValue() * (-1));
+                        } else {
+                            // TODO error attempting to -  a non integer term  (bool)
+                        }
                     }
                 }
             } else {
-                result.setRegister(MIPSFactory.performOpu(this.opu(), operand.reg()));
+                if(this.opu().equals("-") && operand.isBool()) {
+                    //TODO error attempting to - a non integer term (bool)
+                } else {
+                    result.setRegister(MIPSFactory.performOpu(this.opu(), operand.reg()));
+                }
             }
         } else {
             //System.err.
@@ -261,10 +290,14 @@ public class Semantic {
 
         if (this.isNotAnOperation()) return operand2;
 
+        if(this.isUndefined() || operand2.isUndefined()) {
+            return handleOperationWithUndefined(this, operand2);
+        }
+
         Semantic result = new Semantic();
 
         //TODO perform type checks and operator compatibility checks
-        //if(this.intValue())
+
         result.setEstatic(this.isEstatic() && operand2.isEstatic());
         result.setType(this.type());
 
@@ -378,20 +411,20 @@ public class Semantic {
     }
 
     public void store(Semantic expression) {
-        if (!expression.isTipusIndefinit()) {
-            if (this.isVectorIndexNonStatic()) {
-                if (expression.isEstatic()) {
-                    MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
-                } else {
-                    MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.reg());
-                }
+
+        if(this.isVectorIndexNonStatic()){
+            if(expression.isEstatic()){
+                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
             } else {
-                if (expression.isEstatic()) {
-                    MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue());
-                } else {
-                    MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg());
-                }
+                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.reg());
             }
+        } else {
+            if(expression.isEstatic()){
+                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue());
+            } else {
+                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg());
+            }
+        }
 
         }
 
@@ -511,6 +544,10 @@ public class Semantic {
         return type() instanceof TipusSimple && type().getNom().equals(Ase.TIPUS_LOGIC);
     }
 
+    public boolean isUndefined() {
+        return type() instanceof TipusIndefinit;
+    }
+
     public String opRel() {
         return (String) attributes.get("REL_OPERATOR");
     }
@@ -518,6 +555,14 @@ public class Semantic {
     public boolean isVectorIndexNonStatic() {
         boolean b = (boolean) attributes.get("IS_VECTOR_INDEX_NON_STATIC");
         return (boolean) attributes.get("IS_VECTOR_INDEX_NON_STATIC");
+    }
+
+    public boolean hasRegister() {
+        return attributes.containsKey("REG");
+    }
+
+    public boolean isOfSimpleType() {
+        return type() instanceof TipusSimple;
     }
 
 

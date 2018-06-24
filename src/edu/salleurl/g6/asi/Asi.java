@@ -537,6 +537,8 @@ public class Asi {
                 condition = exp();
                 ase.isLogicExp(condition);
 
+                if(condition.isUndefined()) break;
+
                 if(condition.isEstatic()) {
                     MIPSFactory.jumpIfTrue(tag_repetir, condition.intValue());
                 } else {
@@ -548,6 +550,12 @@ public class Asi {
                 String tag_mentre = MIPSFactory.setJumpPoint();
                 condition = exp();
                 ase.isLogicExp(condition);
+
+                if(condition.isUndefined()) {
+                    consume(TokenType.FER);
+                    llistaInst();
+                    consume(TokenType.FIMENTRE);
+                }
 
                 String tag_fimentre;
                 if(condition.isEstatic()) {
@@ -568,6 +576,13 @@ public class Asi {
                 condition = exp();
                 ase.isLogicExp(condition);
                 consume(TokenType.LLAVORS);
+
+                // if the condition is undefined process the instructions and the else but do not codegen the condition
+                if(condition.isUndefined()) {
+                    llistaInst();
+                    hasSino();
+                    consume(TokenType.FISI);
+                }
 
                 String tag_sino;
                 if(condition.isEstatic()) {
