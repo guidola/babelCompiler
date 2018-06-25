@@ -31,7 +31,11 @@ public class Semantic {
     public Semantic(Constant ct, boolean isGlobal) {
 
         attributes = new Hashtable();
-        setValue("VALUE", ct.getValor());
+        if(ct.getTipus() instanceof TipusCadena) {
+            setTag((String)ct.getValor());
+        } else {
+            setValue("VALUE", ct.getValor());
+        }
         setValue("TIPUS", ct.getTipus());
         setValue("IS_GLOBAL", isGlobal);
         setValue("ESTATIC", true);

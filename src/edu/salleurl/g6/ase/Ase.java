@@ -185,8 +185,7 @@ public class Ase {
 
     public boolean validateArrayBounds(Semantic var, Semantic index) {
         if (index.intValue() <= var.arrayUpperBound() &&
-                index.intValue() >= var.arrayLowerBound()){
-            //System.out.println("TODO PERFECTO");
+                index.intValue() >= var.arrayLowerBound()) {
             return true;
         }
         System.err.println("[ERR_SEM_X] L'index esta fora dels límits del vector.");
@@ -195,45 +194,45 @@ public class Ase {
 
     public Semantic validateArrayAccessAndGetOffset(String id, Semantic index) {
 
+        //TODO validate it is actually an array
         Semantic vector = getArray(id);
-        if (!vector.isTipusIndefinit()) {
-            // if vector is undefined ergo, not found, then return an undefined Semantic
-            if (vector.isUndefined()) {
-                MIPSFactory.returnRegister(index);
-                return undefined();
-            }
 
-            Semantic cell = new Semantic();
-            cell.setType(vector.arrayType());
-            cell.setEstatic(false);
-            cell.setGlobal(vector.isGlobal());
-
-            //if index is not int then set index to 0 and static
-            if (!index.isInt()) {
-                if (!index.isUndefined()) {
-                    System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
-                } else {
-                    index.setValue(0);
-                    index.setEstatic(true);
-                }
-            }
-            if (index.isEstatic()) {
-                // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension )
-                if (validateArrayBounds(vector, index)) {
-                    cell.isVectorIndexNonStatic(false);
-                    cell.setOffset(vector.offset() + index.intValue() * vector.arrayType().getTamany());
-                }
-            } else {
-                cell.isVectorIndexNonStatic(true);
-                cell.setRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offset(), index.reg(), vector.arrayLowerBound(),
-                        vector.arrayUpperBound()));
-
-            }
-
-            return cell;
+        // if vector is undefined ergo, not found, then return an undefined Semantic
+        if (vector.isUndefined()) {
+            MIPSFactory.returnRegister(index);
+            return undefined();
         }
-        //vector.isVectorIndexNonStatic(false);
-        return vector;
+
+        Semantic cell = new Semantic();
+        cell.setType(vector.arrayType());
+        cell.setEstatic(false);
+        cell.setGlobal(vector.isGlobal());
+
+        //if index is not int then set index to 0 and static
+        if (!index.isInt()) {
+            if (!index.isUndefined()) {
+                System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
+            }
+
+            index.setValue(0);
+            index.setEstatic(true);
+        }
+
+        if (index.isEstatic()) {
+            // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension )
+            cell.isVectorIndexNonStatic(false);
+            cell.setOffset(validateArrayBounds(vector, index) ?
+                    vector.offset() + index.intValue() * vector.arrayType().getTamany() : vector.offset());
+
+        } else {
+            cell.isVectorIndexNonStatic(true);
+            cell.setRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offset(), index.reg(), vector.arrayLowerBound(),
+                    vector.arrayUpperBound()));
+
+        }
+
+        return cell;
+
     }
 
     private Semantic undefined() {
@@ -246,37 +245,30 @@ public class Ase {
     public Semantic validateArrayAccessAndLoadCell(String id, Semantic index) {
 
         Semantic vector = getArray(id);
-        if (!vector.isTipusIndefinit()) {
-            if (vector.isUndefined()) {
-                MIPSFactory.returnRegister(index);
-                return undefined();
-            }
-
-            if (!index.isInt()) {
-                if (!index.isUndefined()) {
-                    System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
-                }
-                index.setValue(0);
-                index.setEstatic(true);
-            }
-            Semantic cell = new Semantic();
-            cell.setType(vector.arrayType());
-            cell.setEstatic(false);
-
-            if (index.isEstatic()) {
-                // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension
-
-                if (validateArrayBounds(vector, index))
-                    cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), index.intValue(), vector.isGlobal()));
-            } else {
-                cell.setRegister(MIPSFactory.validateAndLoadArrayCell(vector.offset(), index.reg(), vector.arrayLowerBound(),
-                        vector.arrayUpperBound(), vector.isGlobal()));
-
-            }
-            return cell;
-
+        if (vector.isUndefined()) {
+            MIPSFactory.returnRegister(index);
+            return undefined();
         }
-        return vector;
+
+        if (!index.isInt()) {
+            if (!index.isUndefined()) {
+                System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
+            }
+            index.setValue(0);
+            index.setEstatic(true);
+        }
+
+        Semantic cell = new Semantic();
+        cell.setType(vector.arrayType());
+        cell.setEstatic(false);
+
+        if (index.isEstatic()) {
+            cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), validateArrayBounds(vector, index) ? index.intValue() : 0, vector.isGlobal()));
+        } else {
+            cell.setRegister(MIPSFactory.validateAndLoadArrayCell(vector.offset(), index.reg(), vector.arrayLowerBound(),
+                    vector.arrayUpperBound(), vector.isGlobal()));
+        }
+        return cell;
     }
 
     public Funcio addNewFuncio(Funcio var) {
@@ -519,7 +511,6 @@ public class Ase {
         }
         return true;
     }
-
 
     public boolean validateAssigment(Semantic leftPart, Semantic rightPart) {
 

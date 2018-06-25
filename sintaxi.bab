@@ -1,20 +1,50 @@
-const NUM = 20 ;
-const DOS = 10;
-Sencer a;
-Sencer b;
-Sencer c;
-Logic d;
-Logic e;
-logic f;
-sencer g;
+CONST separador = "-";
+CONST n = 15;
 
-inici
-    b = 1;
-    a = 0;
-    c = a * 1 * b + a * 2 - 3 * 50 / b;
-    d = cert;
-    e = fals;
-    f = d and cert  and e or (d or fals or e);
-    g = b and cert and a or (b or fals or a);
-    escriure(a,b,d,e,2,cert,fals);
-fi
+logic var_1;
+logic var_2;
+logic var_3;
+sencer var_41;
+sencer var_42;
+sencer var_43;
+sencer i;
+vector[16] de sencer v;
+
+Inici
+	escriure ("introduce el entero -1:");
+	llegir(var_41);
+	escriure ("introduce el entero 2:");
+	llegir(var_42);
+	escriure ("introduce el entero 3:");
+	llegir(var_43);
+	var_41 = var_41 - var_42 - var_43;
+	escriure("el resultado debe ser -6 y es: ",var_41);
+	escriure ("introduce el entero 2:");
+	llegir(var_41);
+	escriure ("introduce el entero 10:");
+	llegir(var_42);
+	escriure ("introduce el entero 4:");
+	llegir(var_43);
+	var_41 = var_41 * var_42 / var_43;
+	escriure("el resultado debe ser 5 y es: ",var_41);
+	escriure ("introduce el valor logic cert:");
+	llegir(var_2);
+	escriure ("introduce el valor logic fals:");
+	llegir(var_3);
+	var_1 = ( var_41 > var_42) or ((cert and var_3) and (not var_2));
+	escriure("el resultado debe ser falso y es: ", var_1);
+	v[10] = 0;
+	v[11] = 1;
+	v[12] = 2;
+	v[13] = 3;
+	v[14] = 4;
+	v[15] = 5;
+	var_41 = 9;
+	i=0;
+    mentre i<= n fer
+		escriure(V[i]);
+		i=i+1;
+	fimentre;
+	v[var_41 + 10] = 20;
+
+Fi

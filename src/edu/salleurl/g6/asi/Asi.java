@@ -79,8 +79,13 @@ public class Asi {
                 exp_result = ase.validationConst(exp_result);
                 constant.setTipus(exp_result.type());
 
-                if(!exp_result.isTipusIndefinit())
-                    constant.setValor(exp_result.constValue());
+                if(!exp_result.isTipusIndefinit()) {
+                    if(exp_result.isString()){
+                        constant.setValor(exp_result.tag());
+                    } else {
+                        constant.setValor(exp_result.constValue());
+                    }
+                }
 
                 consume(TokenType.STATEMENT_SEPARATOR);
                 ase.addNewConstant(constant);
@@ -171,9 +176,7 @@ public class Asi {
                 // factor expression, ergo define string in assembly and return label to refer to in print operations
                 factor.setEstatic(true);
                 factor.setType(new TipusCadena(Ase.TIPUS_CADENA,0));
-                factor.setValue(lat.getLexem());
-                attr.setTag(MIPSFactory.defineString(consume(TokenType.STRING)));
-                attr.setValue("STRING",factor.type());
+                factor.setTag(MIPSFactory.defineString(consume(TokenType.STRING)));
                 break;
             case IDENTIFIER:
                 String id = consume(TokenType.IDENTIFIER);
@@ -244,10 +247,7 @@ public class Asi {
                 if(variable.isEstatic()){
                     if(isStore) {
                         // TODO generate error -> cannot perform a store against a static identifier ( constant )
-                    } else if(variable.isString()) {
-                        variable.setTag(MIPSFactory.defineString(variable.strValue()));
                     }
-
                 } else {
                     if(!isStore) {
                         variable.setRegister(MIPSFactory.loadVariable(variable.offset(), variable.isGlobal()));
@@ -280,7 +280,7 @@ public class Asi {
     }
 
     private LinkedList<Semantic> llistaExpNonEmpty(LinkedList<Semantic> arguments) throws SyntacticException {
-        arguments.push(exp());
+        arguments.add(exp());
         return llistaExpAux(arguments);
     }
 
@@ -548,9 +548,9 @@ public class Asi {
                 if(condition.isUndefined()) break;
 
                 if(condition.isEstatic()) {
-                    MIPSFactory.jumpIfTrue(tag_repetir, condition.intValue());
+                    MIPSFactory.jumpIfFalse(tag_repetir, condition.intValue());
                 } else {
-                    MIPSFactory.jumpIfTrue(tag_repetir, condition.reg());
+                    MIPSFactory.jumpIfFalse(tag_repetir, condition.reg());
                 }
                 break;
             case MENTRE:
@@ -609,7 +609,7 @@ public class Asi {
                 consume(TokenType.FISI);
                 break;
             case IDENTIFIER:
-                Semantic target = variableStore();
+                Semantic target = variable();
                 consume(TokenType.ASSIGNMENT);
                 Semantic exp_result = exp();
                 exp_result.setEstatic(false); //Funcio sempre no estatica
@@ -666,10 +666,10 @@ public class Asi {
         }
     }
 
-    private Semantic variableStore() throws SyntacticException {
+    /*private Semantic variableStore() throws SyntacticException {
         String id = consume(TokenType.IDENTIFIER);
         return isVector(id, Ase.STORE);
-    }
+    }*/
 
     /**
      * POST:    if non-static returns a REG that holds the content of the variable or array position
@@ -678,11 +678,11 @@ public class Asi {
      */
     private Semantic variable() throws SyntacticException {
         String id = consume(TokenType.IDENTIFIER);
-        return isVector(id, Ase.LOAD);
+        return isVector(id, Ase.STORE);
     }
 
     private LinkedList<Semantic> llistaVar(LinkedList<Semantic> arguments) throws SyntacticException {
-        arguments.push(variable());
+        arguments.add(variable());
         return llistaVarAux(arguments);
     }
 
