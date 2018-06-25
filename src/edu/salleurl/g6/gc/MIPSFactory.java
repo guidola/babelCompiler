@@ -80,7 +80,7 @@ public class MIPSFactory {
 
     private static String g_lw(String r_offset) {
         String rDest = registers.getRegister();
-        String offset_result = add(RegisterHandler.GP, r_offset);
+        String offset_result = sub(RegisterHandler.GP, r_offset);
         out.println("lw " + rDest + ", (" + offset_result + ")");
         registers.returnRegister(offset_result);
         return rDest;
@@ -92,7 +92,7 @@ public class MIPSFactory {
     }
 
     private static void g_sw(String rSrc, String r_offset) {
-        String offset_result = add(RegisterHandler.GP, r_offset);
+        String offset_result = sub(RegisterHandler.GP, r_offset);
         out.println("sw " + rSrc + ", (" + offset_result + ")");
         registers.returnRegisters(rSrc, offset_result);
     }
@@ -107,9 +107,9 @@ public class MIPSFactory {
 
     private static String l_lw(String r_offset) {
         String rDest = registers.getRegister();
-        String offset_result = add(RegisterHandler.FP, r_offset);
+        String offset_result = sub(RegisterHandler.FP, r_offset);
         out.println("lw " + rDest + ", (" + offset_result + ")");
-        registers.returnRegister(r_offset);
+        registers.returnRegister(offset_result);
         return rDest;
     }
 
@@ -119,9 +119,9 @@ public class MIPSFactory {
     }
 
     private static void l_sw(String rSrc, String r_offset) {
-        String offset_result = add(RegisterHandler.FP, r_offset);
+        String offset_result = sub(RegisterHandler.FP, r_offset);
         out.println("sw " + rSrc + ", (" + offset_result + ")");
-        registers.returnRegisters(rSrc, r_offset);
+        registers.returnRegisters(rSrc, offset_result);
     }
 
     /** MEMORY OPERATIONS **/
@@ -171,9 +171,7 @@ public class MIPSFactory {
     }
 
     private static String loadVectorCell(int base_offset, String index_reg, boolean isGlobal) {
-        String rDest = lw(addi(muli(index_reg, REGISTER_SIZE), base_offset), isGlobal);
-        registers.returnRegister(index_reg);
-        return rDest;
+        return lw(addi(muli(index_reg, REGISTER_SIZE), base_offset), isGlobal);
     }
 
     private static String loadVectorCell(int base_offset, int index, boolean isGlobal) {
@@ -407,6 +405,12 @@ public class MIPSFactory {
         registers.returnRegister(r1);
     }
 
+    private static void beqz(String label, String r1) {
+
+        out.println("beqz " + r1 + ", " + label);
+        registers.returnRegister(r1);
+    }
+
     private static String beqz(String r1) {
 
         String label = tags.getCondTag();
@@ -427,7 +431,7 @@ public class MIPSFactory {
     private static String registerStringInDataArea(String str) {
         out.println(".data");
         String tag = tags.getStringTag();
-        out.println(tag + ": .asciiz " + str);
+        out.println(tag + ": .asciiz \"" + str + "\"");
         out.println(".text");
         return tag;
     }
@@ -437,7 +441,7 @@ public class MIPSFactory {
     private static void defineErrorRoutine() {
 
         //register string
-        String tag = registerStringInDataArea("\"[El nucli ha petat] Index out of bounds\"");
+        String tag = registerStringInDataArea("[El nucli ha petat] Index out of bounds");
 
         // print_str
         out.println(TagGenerator.ERROR_IOB + ": ");
@@ -633,6 +637,14 @@ public class MIPSFactory {
         return beqz(r1);
     }
 
+    public static void jumpIfFalse(String label, int literal) {
+        beqz(label, li(literal));
+    }
+
+    public static void jumpIfFalse(String label, String r1) {
+        beqz(label, r1);
+    }
+
     public static void setJumpPoint(String label) {
         writeJumpTag(label);
     }
@@ -667,7 +679,7 @@ public class MIPSFactory {
 
     public static void writeInt(String r1) {
         out.println("li $v0, 0x01");
-        out.println("lw $a0, " + r1);
+        out.println("move $a0, " + r1);
         out.println("syscall");
         registers.returnRegister(r1);
     }
