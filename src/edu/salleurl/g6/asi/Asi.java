@@ -237,6 +237,9 @@ public class Asi {
                 variable = ase.getVariableOrConstant(id);
                 variable.isVectorIndexNonStatic(false);
                 if(variable.isEstatic()){
+                    if(!ase.isVar(id)){
+                        //TODO GC WHEN LEFT PART IS NOT A VAR
+                    }
                     if(variable.isString()) {
                         variable.setTag(MIPSFactory.defineString(variable.strValue()));
                     }
@@ -248,7 +251,7 @@ public class Asi {
 
                 break;
         }
-        variable.setValue("VAR_NAME",id);
+
         return variable;
     }
 
@@ -604,6 +607,7 @@ public class Asi {
                 Semantic target = variableStore();
                 consume(TokenType.ASSIGNMENT);
                 Semantic exp_result = exp();
+                exp_result.setEstatic(false); //Funcio sempre no estatica
                 if(ase.validateAssigment(target,exp_result))
                     target.store(exp_result);
                 break;

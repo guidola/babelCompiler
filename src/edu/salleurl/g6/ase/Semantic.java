@@ -153,7 +153,9 @@ public class Semantic {
     public boolean isArray() {
         return this.type() instanceof TipusArray;
     }
-
+    public boolean isCadena() {
+        return this.type() instanceof TipusCadena;
+    }
     public void copy(Semantic exp) {
 
         if (exp.getAttributes().containsKey("VALUE"))
@@ -295,119 +297,125 @@ public class Semantic {
         Semantic result = new Semantic();
 
         //TODO perform type checks and operator compatibility checks
-        if((this.isEstatic() && operand2.isEstatic())  &&(this.isSameTypeTo(operand2)))
-        result.setEstatic(this.isEstatic() && operand2.isEstatic());
-        result.setType(this.type());
+        if(this.isSameTypeTo(operand2)){
+            if(!this.isArray() && !this.isCadena()) {
+                result.setEstatic(this.isEstatic() && operand2.isEstatic());
+                result.setType(this.type());
 
-        // if it gets to this point everything is semantically correct
-        if (result.isEstatic()) {
-            switch (this.binaryOperator()) {
-                case "+":
-                    if(this.isInt() && operand2.isInt())
-                        result.setValue(this.intValue() + operand2.intValue());
-                    break;
+                // if it gets to this point everything is semantically correct
+                if (result.isEstatic()) {
+                    switch (this.binaryOperator()) {
+                        case "+":
+                            if (this.isInt() && operand2.isInt())
+                                result.setValue(this.intValue() + operand2.intValue());
+                            break;
 
-                case "-":
-                    if(this.isInt() && operand2.isInt())
-                        result.setValue(this.intValue() - operand2.intValue());
-                    break;
+                        case "-":
+                            if (this.isInt() && operand2.isInt())
+                                result.setValue(this.intValue() - operand2.intValue());
+                            break;
 
-                case "*":
-                    if(this.isInt() && operand2.isInt())
-                        result.setValue(this.intValue() * operand2.intValue());
-                    break;
+                        case "*":
+                            if (this.isInt() && operand2.isInt())
+                                result.setValue(this.intValue() * operand2.intValue());
+                            break;
 
-                case "/":
-                    if(this.isInt() && operand2.isInt())
-                        result.setValue(this.intValue() / operand2.intValue());
-                    break;
+                        case "/":
+                            if (this.isInt() && operand2.isInt())
+                                result.setValue(this.intValue() / operand2.intValue());
+                            break;
 
-                case "and":
-                    result.setValue(this.intValue() & operand2.intValue());
-                    break;
+                        case "and":
+                            result.setValue(this.intValue() & operand2.intValue());
+                            break;
 
-                case "or":
-                    result.setValue(this.intValue() | operand2.intValue());
-                    break;
+                        case "or":
+                            result.setValue(this.intValue() | operand2.intValue());
+                            break;
 
+                    }
+                } else {
+                    switch (this.binaryOperator()) {
+                        case "+":
+                            if (this.isEstatic()) {
+                                result.setRegister(MIPSFactory.performAdd(this.intValue(), operand2.reg()));
+                            } else {
+                                if (operand2.isEstatic()) {
+                                    result.setRegister(MIPSFactory.performAdd(this.reg(), operand2.intValue()));
+                                } else {
+                                    result.setRegister(MIPSFactory.performAdd(this.reg(), operand2.reg()));
+                                }
+                            }
+                            break;
+
+                        case "-":
+                            if (this.isEstatic()) {
+                                result.setRegister(MIPSFactory.performSub(this.intValue(), operand2.reg()));
+                            } else {
+                                if (operand2.isEstatic()) {
+                                    result.setRegister(MIPSFactory.performSub(this.reg(), operand2.intValue()));
+                                } else {
+                                    result.setRegister(MIPSFactory.performSub(this.reg(), operand2.reg()));
+                                }
+                            }
+                            break;
+
+                        case "*":
+                            if (this.isEstatic()) {
+                                result.setRegister(MIPSFactory.performMul(this.intValue(), operand2.reg()));
+                            } else {
+                                if (operand2.isEstatic()) {
+                                    result.setRegister(MIPSFactory.performMul(this.reg(), operand2.intValue()));
+                                } else {
+                                    result.setRegister(MIPSFactory.performMul(this.reg(), operand2.reg()));
+                                }
+                            }
+                            break;
+
+                        case "/":
+                            if (this.isEstatic()) {
+                                result.setRegister(MIPSFactory.performDiv(this.intValue(), operand2.reg()));
+                            } else {
+                                if (operand2.isEstatic()) {
+                                    result.setRegister(MIPSFactory.performDiv(this.reg(), operand2.intValue()));
+                                } else {
+                                    result.setRegister(MIPSFactory.performDiv(this.reg(), operand2.reg()));
+                                }
+                            }
+                            break;
+
+                        case "or":
+                            if (this.isEstatic()) {
+                                result.setRegister(MIPSFactory.performOr(this.intValue(), operand2.reg(), this.isInt()));
+                            } else {
+                                if (operand2.isEstatic()) {
+                                    result.setRegister(MIPSFactory.performOr(this.reg(), operand2.intValue(), this.isInt()));
+                                } else {
+                                    result.setRegister(MIPSFactory.performOr(this.reg(), operand2.reg(), this.isInt()));
+                                }
+                            }
+                            break;
+
+                        case "and":
+                            if (this.isEstatic()) {
+                                result.setRegister(MIPSFactory.performAnd(this.intValue(), operand2.reg(), this.isInt()));
+                            } else {
+                                if (operand2.isEstatic()) {
+                                    result.setRegister(MIPSFactory.performAnd(this.reg(), operand2.intValue(), this.isInt()));
+                                } else {
+                                    result.setRegister(MIPSFactory.performAnd(this.reg(), operand2.reg(), this.isInt()));
+                                }
+                            }
+                            break;
+
+                    }
+                }
+            }else{
+                System.err.println("[ERR_SEM_X] No es pot operar amb expressions de tipus array o cadena");
             }
-        } else {
-            switch (this.binaryOperator()) {
-                case "+":
-                    if (this.isEstatic()) {
-                        result.setRegister(MIPSFactory.performAdd(this.intValue(), operand2.reg()));
-                    } else {
-                        if (operand2.isEstatic()) {
-                            result.setRegister(MIPSFactory.performAdd(this.reg(), operand2.intValue()));
-                        } else {
-                            result.setRegister(MIPSFactory.performAdd(this.reg(), operand2.reg()));
-                        }
-                    }
-                    break;
-
-                case "-":
-                    if (this.isEstatic()) {
-                        result.setRegister(MIPSFactory.performSub(this.intValue(), operand2.reg()));
-                    } else {
-                        if (operand2.isEstatic()) {
-                            result.setRegister(MIPSFactory.performSub(this.reg(), operand2.intValue()));
-                        } else {
-                            result.setRegister(MIPSFactory.performSub(this.reg(), operand2.reg()));
-                        }
-                    }
-                    break;
-
-                case "*":
-                    if (this.isEstatic()) {
-                        result.setRegister(MIPSFactory.performMul(this.intValue(), operand2.reg()));
-                    } else {
-                        if (operand2.isEstatic()) {
-                            result.setRegister(MIPSFactory.performMul(this.reg(), operand2.intValue()));
-                        } else {
-                            result.setRegister(MIPSFactory.performMul(this.reg(), operand2.reg()));
-                        }
-                    }
-                    break;
-
-                case "/":
-                    if (this.isEstatic()) {
-                        result.setRegister(MIPSFactory.performDiv(this.intValue(), operand2.reg()));
-                    } else {
-                        if (operand2.isEstatic()) {
-                            result.setRegister(MIPSFactory.performDiv(this.reg(), operand2.intValue()));
-                        } else {
-                            result.setRegister(MIPSFactory.performDiv(this.reg(), operand2.reg()));
-                        }
-                    }
-                    break;
-
-                case "or":
-                    if (this.isEstatic()) {
-                        result.setRegister(MIPSFactory.performOr(this.intValue(), operand2.reg(), this.isInt()));
-                    } else {
-                        if (operand2.isEstatic()) {
-                            result.setRegister(MIPSFactory.performOr(this.reg(), operand2.intValue(), this.isInt()));
-                        } else {
-                            result.setRegister(MIPSFactory.performOr(this.reg(), operand2.reg(), this.isInt()));
-                        }
-                    }
-                    break;
-
-                case "and":
-                    if (this.isEstatic()) {
-                        result.setRegister(MIPSFactory.performAnd(this.intValue(), operand2.reg(), this.isInt()));
-                    } else {
-                        if (operand2.isEstatic()) {
-                            result.setRegister(MIPSFactory.performAnd(this.reg(), operand2.intValue(), this.isInt()));
-                        } else {
-                            result.setRegister(MIPSFactory.performAnd(this.reg(), operand2.reg(), this.isInt()));
-                        }
-                    }
-                    break;
-
-            }
+        }else{
+            System.err.println("[ERR_SEM_X] La part esquerra i la part dreta no son del mateix tipus");
         }
-
 
         return result;
     }

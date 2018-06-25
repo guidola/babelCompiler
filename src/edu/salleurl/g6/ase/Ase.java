@@ -185,7 +185,8 @@ public class Ase {
 
     public boolean validateArrayBounds(Semantic var, Semantic index) {
         if (index.intValue() <= var.arrayUpperBound() &&
-                index.intValue() >= var.arrayLowerBound()) {
+                index.intValue() >= var.arrayLowerBound()){
+            //System.out.println("TODO PERFECTO");
             return true;
         }
         System.err.println("[ERR_SEM_X] L'index esta fora dels límits del vector.");
@@ -194,7 +195,6 @@ public class Ase {
 
     public Semantic validateArrayAccessAndGetOffset(String id, Semantic index) {
 
-        //TODO validate it is actually an array
         Semantic vector = getArray(id);
         if (!vector.isTipusIndefinit()) {
             // if vector is undefined ergo, not found, then return an undefined Semantic
@@ -216,21 +216,23 @@ public class Ase {
                     index.setValue(0);
                     index.setEstatic(true);
                 }
-                if (index.isEstatic()) {
-                    // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension )
-                    if (validateArrayBounds(vector, index)) {
-                        cell.isVectorIndexNonStatic(false);
-                        cell.setOffset(vector.offset() + index.intValue() * vector.arrayType().getTamany());
-                    }
-                } else {
-                    cell.isVectorIndexNonStatic(true);
-                    cell.setRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offset(), index.reg(), vector.arrayLowerBound(),
-                            vector.arrayUpperBound()));
-
-                }
             }
+            if (index.isEstatic()) {
+                // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension )
+                if (validateArrayBounds(vector, index)) {
+                    cell.isVectorIndexNonStatic(false);
+                    cell.setOffset(vector.offset() + index.intValue() * vector.arrayType().getTamany());
+                }
+            } else {
+                cell.isVectorIndexNonStatic(true);
+                cell.setRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offset(), index.reg(), vector.arrayLowerBound(),
+                        vector.arrayUpperBound()));
+
+            }
+
             return cell;
         }
+        //vector.isVectorIndexNonStatic(false);
         return vector;
     }
 
@@ -257,7 +259,6 @@ public class Ase {
                 index.setValue(0);
                 index.setEstatic(true);
             }
-
             Semantic cell = new Semantic();
             cell.setType(vector.arrayType());
             cell.setEstatic(false);
@@ -273,6 +274,7 @@ public class Ase {
 
             }
             return cell;
+
         }
         return vector;
     }
@@ -511,17 +513,16 @@ public class Ase {
         if (var == null) {
             var = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id);
             if (var == null) {
+                System.err.println("[ERR_SEM_10] L'identificador [" + id + "] en part esquerra d'assignació no és una variable");
                 return false;
             }
         }
         return true;
     }
 
+
     public boolean validateAssigment(Semantic leftPart, Semantic rightPart) {
-        if (!isVar(leftPart.varName())) {
-            System.err.println("[ERR_SEM_10] L'identificador [" + leftPart.varName() + "] en part esquerra d'assignació no és una variable");
-            return false;
-        } else {
+
             //if (!leftPart.isTipusIndefinit()) {
             //TODO isSemanticalTo() ... FER EN EL SEMANTIC
             //if (!leftPart.type().getNom().equals(rightPart.type().getNom()) && !rightPart.isTipusIndefinit()) {
@@ -531,9 +532,7 @@ public class Ase {
                         "] i el de l'expressió és [" + rightPart.typeName() + "]");
                 return false;
             }
-            //  }
-            //}
-        }
+
         return true;
     }
 
