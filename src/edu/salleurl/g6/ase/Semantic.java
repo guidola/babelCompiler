@@ -417,6 +417,7 @@ public class Semantic {
             System.err.println("[ERR_SEM_X] La part esquerra i la part dreta no son del mateix tipus");
         }
 
+
         return result;
     }
 
