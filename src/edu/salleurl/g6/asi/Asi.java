@@ -236,10 +236,18 @@ public class Asi {
             default:
                 variable = ase.getVariableOrConstant(id);
                 variable.isVectorIndexNonStatic(false);
+
+                if(variable.isUndefined()) {
+                    return variable;
+                }
+
                 if(variable.isEstatic()){
-                    if(variable.isString()) {
+                    if(isStore) {
+                        // TODO generate error -> cannot perform a store against a static identifier ( constant )
+                    } else if(variable.isString()) {
                         variable.setTag(MIPSFactory.defineString(variable.strValue()));
                     }
+
                 } else {
                     if(!isStore) {
                         variable.setRegister(MIPSFactory.loadVariable(variable.offset(), variable.isGlobal()));

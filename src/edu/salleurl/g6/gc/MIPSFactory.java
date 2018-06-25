@@ -57,9 +57,9 @@ public class MIPSFactory {
 
     public static void init() {
         out.println(".data");
-        out.println(TAG_CERT + ": .asciiz " + Ase.CERT);
-        out.println(TAG_FALS + ": .asciiz " + Ase.FALS);
-        out.println(TAG_LINEJUMP + ": .asciiz " + "\n");
+        out.println(TAG_CERT + ": .asciiz \"" + Ase.CERT + "\"");
+        out.println(TAG_FALS + ": .asciiz \"" + Ase.FALS + "\"");
+        out.println(TAG_LINEJUMP + ": .asciiz \"\\n\"");
         out.println(".text");
         defineErrorRoutine();
         out.print("main: ");

@@ -3,9 +3,18 @@ const DOS = 10;
 Sencer a;
 Sencer b;
 Sencer c;
+Logic d;
+Logic e;
+logic f;
+sencer g;
 
 inici
     b = 1;
-    a = 50;
-    c = a + b+  1 > b + a;
+    a = 0;
+    c = a * 1 * b + a * 2 - 3 * 50 / b;
+    d = cert;
+    e = fals;
+    f = d and cert  and e or (d or fals or e);
+    g = b and cert and a or (b or fals or a);
+    escriure(a,b,d,e,2,cert,fals);
 fi

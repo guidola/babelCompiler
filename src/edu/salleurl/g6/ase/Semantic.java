@@ -295,7 +295,7 @@ public class Semantic {
         Semantic result = new Semantic();
 
         //TODO perform type checks and operator compatibility checks
-        if((this.isEstatic() && operand2.isEstatic())  &&(this.isSameTypeTo(operand2)))
+
         result.setEstatic(this.isEstatic() && operand2.isEstatic());
         result.setType(this.type());
 
