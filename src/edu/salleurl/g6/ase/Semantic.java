@@ -136,6 +136,10 @@ public class Semantic {
         getAttributes().put("B_OPERATOR", operator);
     }
 
+    public void isRef(boolean isRef) {
+        getAttributes().put("IS_REF", isRef);
+    }
+
     public void setUOperator(String operator) {
         getAttributes().put("U_OPERATOR", operator);
     }
@@ -164,6 +168,14 @@ public class Semantic {
         getAttributes().put("IS_VECTOR_INDEX_NON_STATIC", isVector);
     }
 
+    public void merge(Semantic additional_params) {
+        getAttributes().putAll(additional_params.getAttributes());
+    }
+
+    public void setOffsetRegister(String register) {
+        getAttributes().put("OFFSET_REG", register);
+    }
+
     public boolean isTipusIndefinit() {
         return this.type() instanceof TipusIndefinit;
 
@@ -173,6 +185,10 @@ public class Semantic {
     }
     public Object isConst(){
         return this.getValue("IS_CONST");
+    }
+
+    public void setAddressOffset(int offset) {
+        getAttributes().put("ADDRESS_OFFSET", offset);
     }
 
     public boolean isArray() {
@@ -566,6 +582,10 @@ public class Semantic {
         return ((String) attributes.get("VAR_NAME"));
     }
 
+    public boolean hasOffset() {
+        return attributes.contains("OFFSET");
+    }
+
     public String typeId() {
 
         if (attributes.get("TIPUS") instanceof TipusSimple) {
@@ -634,6 +654,17 @@ public class Semantic {
         return type() instanceof TipusSimple;
     }
 
+    public String offsetRegister() {
+        return (String) attributes.get("OFFSET_REG");
+    }
+
+    public boolean isRef() {
+        return (boolean) attributes.get("IS_REF");
+    }
+
+    public int addressOffset() {
+        return (int) attributes.get("ADDRESS_OFFSET");
+    }
 
     public String toString() {
 

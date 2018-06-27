@@ -2,12 +2,14 @@ package edu.salleurl.g6.gc;
 
 import edu.salleurl.g6.ase.Ase;
 import edu.salleurl.g6.ase.Semantic;
+import sun.jvm.hotspot.asm.Register;
 //import sun.jvm.hotspot.asm.Register;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.LinkedList;
 
 public class MIPSFactory {
 
@@ -63,11 +65,7 @@ public class MIPSFactory {
         out.println(".text");
         defineErrorRoutine();
         out.print("main: ");
-        out.println("move $fp, $sp");
-    }
-
-    private static void moveSp(int frame_size) {
-        out.println("addiu $sp, $sp, " + frame_size);
+        moveFpToSp();
     }
 
     /** GLOBAL MEMORY OPERATIONS **/
@@ -170,8 +168,17 @@ public class MIPSFactory {
 
     }
 
-    private static String loadVectorCell(int base_offset, String index_reg, boolean isGlobal) {
-        return lw(addi(muli(index_reg, REGISTER_SIZE), base_offset), isGlobal);
+    private static String duplicate(String r1) {
+        String rDest = registers.getRegister();
+        out.println("move " + rDest + ", " + r1);
+        return rDest;
+    }
+
+    private static Semantic loadVectorCellAndGetOffset(int base_offset, String index_reg, boolean isGlobal) {
+        Semantic result = new Semantic();
+        result.setOffsetRegister(addi(muli(index_reg, REGISTER_SIZE), base_offset));
+        result.setRegister(lw(duplicate(result.offsetRegister()), isGlobal));
+        return result;
     }
 
     private static String loadVectorCell(int base_offset, int index, boolean isGlobal) {
@@ -455,6 +462,47 @@ public class MIPSFactory {
 
     }
 
+    /** FUNCTION CALLS AND RETURNS **/
+
+    public static void moveSp(int offset_size) {
+        out.println("addiu $sp, $sp, " + (-offset_size));
+    }
+
+    private static void storeAtStack(String register, int addr_offset) {
+        out.println("sw " + register + ", " + (-addr_offset) + "($sp)");
+    }
+
+    private static void storeAtStack(String register) {
+        out.println("sw " + register + ", ($sp)");
+    }
+
+    private static void stackRegister(String register) {
+        storeAtStack(register);
+        moveSp(REGISTER_SIZE);
+    }
+
+    private static void stackGPRs() {
+        for (String register : RegisterHandler.registerPool) {
+            stackRegister(register);
+        }
+
+    }
+
+    private static void ret(String r1) {
+        out.println("lw " + r1 + ", 4($fp)");
+        registers.returnRegister(r1);
+        out.println("jr $ra");
+    }
+
+    private static void ret(int literal) {
+        String r1 = li(literal);
+        out.println("lw " + r1 + ", 4($fp)");
+        registers.returnRegister(r1);
+        out.println("jr $ra");
+    }
+
+
+
     /* ---------------------------------------------------------------------------------------------------- */
     /** INTERFACE FOR ASI **/
 
@@ -483,9 +531,10 @@ public class MIPSFactory {
         return loadVectorCell(base_offset, index, isGlobal);
     }
 
-    public static String validateAndLoadArrayCell(int base_offset, String index_reg, int min_position, int max_position, boolean isGlobal) {
+    public static Semantic validateAndGetOffsetPlusLoadArrayCell(int base_offset, String index_reg, int min_position, int max_position, boolean isGlobal) {
+
         validateVectorAccess(index_reg, min_position, max_position);
-        return loadVectorCell(base_offset, index_reg, isGlobal);
+        return loadVectorCellAndGetOffset(base_offset, index_reg, isGlobal);
     }
 
     public static String defineString(String str) {
@@ -720,7 +769,40 @@ public class MIPSFactory {
         sw(simpleToLogic(RegisterHandler.V0), offset, isGlobal);
     }
 
+    public static void retornar(int literal) {
+        ret(literal);
+    }
 
+    public static void retornar(String r1) {
+        ret(r1);
+    }
+
+    public static void stackContext() {
+        stackGPRs();
+        stackRegister(RegisterHandler.FP);
+        stackRegister(RegisterHandler.RA);
+        stackRegister(RegisterHandler.ZERO); // stack register zero to reserve the area meant for the return value
+    }
+
+    public static void moveFpToSp() {
+        out.println("move $fp, $sp");
+    }
+
+    public static void stackParameter(int literal, int addr_offset) {
+        storeAtStack(li(literal), addr_offset);
+    }
+
+    public static void stackParameter(String r1, int addr_offset) {
+        storeAtStack(r1, addr_offset);
+    }
+
+    public static void stackArrayCell(int offset, int index, boolean isGlobal, int addr_offset) {
+        storeAtStack(loadArrayCell(offset, index, isGlobal), addr_offset);
+    }
+
+    public static void jal(String tag) {
+        out.println("jal " + tag);
+    }
 
     /** SOME HELPERS THAT DO NOT  GENERATE ASSEMBLY CODE **/
 

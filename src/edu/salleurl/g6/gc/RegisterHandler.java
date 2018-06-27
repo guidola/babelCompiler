@@ -8,29 +8,19 @@ public class RegisterHandler {
     public static final String FP = "$fp";
     public static final String GP = "$gp";
     public static final String V0 = "$v0";
-
+    public static final String RA = "$ra";
+    public static final String ZERO = "$zero";
+    public static final String[] registerPool = {
+        "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$16",
+        "$17", "$18", "$19", "$20", "$21", "$22", "$23", "$24", "$25"
+    };
 
     public RegisterHandler() {
 
         registers = new LinkedList<>();
-        registers.add("$8");
-        registers.add("$9");
-        registers.add("$10");
-        registers.add("$11");
-        registers.add("$12");
-        registers.add("$13");
-        registers.add("$14");
-        registers.add("$15");
-        registers.add("$16");
-        registers.add("$17");
-        registers.add("$18");
-        registers.add("$19");
-        registers.add("$20");
-        registers.add("$21");
-        registers.add("$22");
-        registers.add("$23");
-        registers.add("$24");
-        registers.add("$25");
+        for (String register : registerPool) {
+            registers.push(register);
+        }
     }
 
     public String getRegister() {
