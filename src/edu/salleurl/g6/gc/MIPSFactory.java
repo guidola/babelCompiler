@@ -2,8 +2,6 @@ package edu.salleurl.g6.gc;
 
 import edu.salleurl.g6.ase.Ase;
 import edu.salleurl.g6.ase.Semantic;
-import sun.jvm.hotspot.asm.Register;
-//import sun.jvm.hotspot.asm.Register;
 
 import java.io.File;
 import java.io.FileNotFoundException;

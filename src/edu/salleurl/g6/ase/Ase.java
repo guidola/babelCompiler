@@ -16,6 +16,7 @@ public class Ase {
     public static final String TIPUS_LOGIC = "logic";
     public static final String TIPUS_CADENA = "cadena";
     public static final String TIPUS_ARRAY = "array";
+    public static final String TIPUS_INDEFINIT = "TipusIndefinit";
     public static final String CERT = "cert";
     public static final String FALS = "fals";
     public static final boolean STORE = true;
@@ -640,10 +641,11 @@ public class Ase {
                     } else {
                         MIPSFactory.writeBoolean(argument.reg());
                     }
-
                     break;
                 case TIPUS_CADENA:
                     MIPSFactory.writeString(argument.tag());
+                    break;
+                case Ase.TIPUS_INDEFINIT:
                     break;
                 default:
                     log("[ERR_SEM_13] "+Alex.getLine()+", El tipus de la expressió en ESCRIURE no és simple o no és una constant cadena");

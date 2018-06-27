@@ -592,8 +592,9 @@ public class Semantic {
             return ((TipusSimple) attributes.get("TIPUS")).getNom();
         } else if (attributes.get("TIPUS") instanceof TipusCadena) {
             return Ase.TIPUS_CADENA;
+        }else if(this.isUndefined()){
+            return Ase.TIPUS_INDEFINIT;
         }
-
         return "THIS_SHOULD_NEVER_HAPPEN";
     }
     public String typeName() {
