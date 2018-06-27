@@ -1,5 +1,7 @@
 package edu.salleurl.g6.ase;
 
+import edu.salleurl.g6.alex.Alex;
+import edu.salleurl.g6.asi.Asi;
 import edu.salleurl.g6.gc.MIPSFactory;
 import edu.salleurl.g6.model.TokenType;
 import taulasimbols.*;
@@ -25,6 +27,11 @@ public class Ase {
         this.ts = new TaulaSimbols();
     }
 
+    private void log(String text) {
+        System.err.println(text);
+        Alex.getLog().writeError(text);
+    }
+
 
     public static String parseType(String lexem) {
 
@@ -40,26 +47,35 @@ public class Ase {
     }
 
     public void addNewConstant(Constant var) {
-        if (ts.obtenirBloc(ts.getBlocActual()).obtenirConstant(var.getNom()) == null &&
-                ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(var.getNom()) == null)
+        if (!existConst(var.getNom()))
             ts.obtenirBloc(ts.getBlocActual()).inserirConstant(var);
         else
-            System.err.println("[ERR_SEM_1] Constant " + var.getNom() + "  doblement definida");
+            log("[ERR_SEM_1] "+Alex.getLine()+", Constant [" + var.getNom() + "] doblement definida");
 
     }
 
     public Boolean existConst(String id) {
+        /*boolean find = false;
         if (ts.getBlocActual() == 1) {
-            return ts.obtenirBloc(ts.getBlocActual()).obtenirConstant(id) != null || ts.obtenirBloc(CONTEXT_GLOBAL).obtenirConstant(id) != null;
+            find = ts.obtenirBloc(ts.getBlocActual()).obtenirConstant(id) != null;
         }
-        return ts.obtenirBloc(CONTEXT_GLOBAL).obtenirConstant(id) != null;
+        if(!find){
+            find = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirConstant(id) != null;
+        }
+        return find;*/
+        return ts.obtenirBloc(ts.getBlocActual()).obtenirConstant(id) != null;
     }
 
     public Boolean existVar(String id) {
+        /*boolean find = false;
         if (ts.getBlocActual() == 1) {
-            return ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(id) != null || ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id) != null;
+            find = ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(id) != null ;
         }
-        return ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id) != null;
+        if(!find){
+            find = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id) != null;
+        }
+        return find;*/
+        return ts.obtenirBloc(ts.getBlocActual()).obtenirVariable(id) != null;
     }
 
     public Boolean existFuncio(String id) {
@@ -68,10 +84,16 @@ public class Ase {
 
 
     public void addNewVar(Variable var) {
-        if (!existConst(var.getNom()) && !existVar(var.getNom()))
-            ts.obtenirBloc(ts.getBlocActual()).inserirVariable(var);
-        else
-            System.err.println("[ERR_SEM_2] Variable " + var.getNom() + " doblement definida");
+        if (!existConst(var.getNom()) ){
+            if(!existVar(var.getNom())){
+                //if(!existFuncio(var.getNom())){
+                    ts.obtenirBloc(ts.getBlocActual()).inserirVariable(var);
+                //}else
+                  //  log("[ERR_SEM_X] "+Alex.getLine()+", Identificador [" + var.getNom() + "] utilitzat previament per una funcio");
+            }else
+                log("[ERR_SEM_2] "+Alex.getLine()+ ", Variable [" + var.getNom() + "] doblement definida");
+        } else
+            log("[ERR_SEM_20] "+Alex.getLine()+", Identificador [" + var.getNom() + "] utilitzat previament per una constant");
 
 
     }
@@ -139,10 +161,14 @@ public class Ase {
                 return null;
             }
 
-            return new Semantic(var, true);
+            Semantic getVar =new Semantic(var, ts.getBlocActual() == CONTEXT_GLOBAL);
+            getVar.setIsVar(true);
+            return getVar;
         }
 
-        return new Semantic(ct, true);
+        Semantic getConst =new Semantic(ct, ts.getBlocActual() == CONTEXT_GLOBAL);
+        getConst.setIsConst(true);
+        return getConst;
     }
 
     public Semantic getVariableOrConstant(String id) {
@@ -158,11 +184,14 @@ public class Ase {
                 }
                 return s;
             }
-
-            return new Semantic(var, ts.getBlocActual() == CONTEXT_GLOBAL);
+            Semantic getVar =new Semantic(var, ts.getBlocActual() == CONTEXT_GLOBAL);
+            getVar.setIsVar(true);
+            return getVar;
         }
 
-        return new Semantic(ct, ts.getBlocActual() == CONTEXT_GLOBAL);
+        Semantic getConst =new Semantic(ct, ts.getBlocActual() == CONTEXT_GLOBAL);
+        getConst.setIsConst(true);
+        return getConst;
     }
 
     public Semantic getArray(String id) {
@@ -178,7 +207,7 @@ public class Ase {
         if (var.getTipus() instanceof TipusArray) {
             return new Semantic(var, isGlobal);
         }
-        System.err.println("[ERR_SEM_X] La variable " + id + " no es de tipus array");
+        log("[ERR_SEM_21] "+Alex.getLine()+", La variable " + id + " no es de tipus array");
         var = new Variable(id, new TipusIndefinit(), 4);
         return new Semantic(var, isGlobal);
     }
@@ -188,7 +217,7 @@ public class Ase {
                 index.intValue() >= var.arrayLowerBound()) {
             return true;
         }
-        System.err.println("[ERR_SEM_X] L'index esta fora dels límits del vector.");
+        log("[ERR_SEM_22] "+Alex.getLine()+", L'index ["+index.intValue()+"] esta fora dels límits del vector, entre ["+var.arrayLowerBound()+","+var.arrayUpperBound()+"]");
         return false;
     }
 
@@ -211,7 +240,7 @@ public class Ase {
         //if index is not int then set index to 0 and static
         if (!index.isInt()) {
             if (!index.isUndefined()) {
-                System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
+                log("[ERR_SEM_12] "+Alex.getLine()+", El tipus de l'index d'accés del vector no és SENCER");
             }
 
             index.setValue(0);
@@ -230,7 +259,7 @@ public class Ase {
                     vector.arrayUpperBound()));
 
         }
-
+        cell.setIsVar(true);
         return cell;
 
     }
@@ -239,6 +268,7 @@ public class Ase {
         Semantic undefined = new Semantic();
         undefined.setType(new TipusIndefinit());
         undefined.setEstatic(true);
+        undefined.setIsVar(false);
         return undefined;
     }
 
@@ -252,7 +282,7 @@ public class Ase {
 
         if (!index.isInt()) {
             if (!index.isUndefined()) {
-                System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
+                log("[ERR_SEM_12] "+Alex.getLine()+", El tipus de l'index d'accés del vector no és SENCER");
             }
             index.setValue(0);
             index.setEstatic(true);
@@ -272,7 +302,7 @@ public class Ase {
     }
 
     public Funcio addNewFuncio(Funcio var) {
-        System.out.println("FUNCIO: " + var.getNom());
+        //System.out.println("FUNCIO: " + var.getNom());
 
         if (!existFuncio(var.getNom())) {
             if (!existVar(var.getNom()) && !existConst(var.getNom())) {
@@ -280,13 +310,14 @@ public class Ase {
                 ts.obtenirBloc(ts.getBlocActual()).inserirProcediment(var);
                 return var;
             } else
-                System.err.println("[ERR_SEM_X] Idenificador utilitzat previament per una variable o constant");
+                log("[ERR_SEM_23] "+Alex.getLine()+", Identificador utilitzat previament per una variable o constant");
 
         } else
-            System.err.println("[ERR_SEM_3] Funció doblement definida");
+            log("[ERR_SEM_3] "+Alex.getLine()+", Funció doblement definida");
 
         int i = 0;
-        while (!existFuncio(var.getNom() + "_" + i) && !existVar(var.getNom() + "_" + i) && !existConst(var.getNom() + "_" + i))
+        while (existFuncio(var.getNom() + "_" + i) && existVar(var.getNom() + "_" + i)
+                && existConst(var.getNom() + "_" + i))
             i++;
         var.setNom(var.getNom() + "_" + i);
         return var;
@@ -294,9 +325,9 @@ public class Ase {
 
     public void deleteActualBlock() {
         ts.esborrarBloc(ts.getBlocActual());
-        System.out.println("Deleted block: " + ts.getBlocActual());
+        //System.out.println("Deleted block: " + ts.getBlocActual());
         ts.setBlocActual(ts.getBlocActual() - 1);
-        System.out.println("Blocks availble: " + ts.getBlocActual());
+        //System.out.println("Blocks availble: " + ts.getBlocActual());
     }
 
     //TODO permanently remove this when validated the current logic does not need it.
@@ -328,24 +359,28 @@ public class Ase {
     public void performReadOperation(LinkedList<Semantic> arguments) {
 
         for (Semantic argument : arguments) {
-            switch (argument.typeId()) {
-                case TIPUS_SIMPLE:
-                    if (argument.isVectorIndexNonStatic()) {
-                        MIPSFactory.readInt(argument.reg(), argument.isGlobal());
-                    } else {
-                        MIPSFactory.readInt(argument.offset(), argument.isGlobal());
-                    }
-                    break;
+            if(argument.isConst() == null ) {
+                switch (argument.typeId()) {
+                    case TIPUS_SIMPLE:
+                        if (argument.isVectorIndexNonStatic()) {
+                            MIPSFactory.readInt(argument.reg(), argument.isGlobal());
+                        } else {
+                            MIPSFactory.readInt(argument.offset(), argument.isGlobal());
+                        }
+                        break;
 
-                case TIPUS_LOGIC:
-                    if (argument.isVectorIndexNonStatic()) {
-                        MIPSFactory.readBool(argument.reg(), argument.isGlobal());
-                    } else {
-                        MIPSFactory.readBool(argument.offset(), argument.isGlobal());
-                    }
-                    break;
-                default:
-                    System.err.println("[ERR_SEM_X] El tipus de la expressió en LLEGIR no és simple o no és logic");
+                    case TIPUS_LOGIC:
+                        if (argument.isVectorIndexNonStatic()) {
+                            MIPSFactory.readBool(argument.reg(), argument.isGlobal());
+                        } else {
+                            MIPSFactory.readBool(argument.offset(), argument.isGlobal());
+                        }
+                        break;
+                    default:
+                        log("[ERR_SEM_24] "+Alex.getLine()+", El tipus de la expressió en LLEGIR no és simple o no és logic");
+                }
+            }else{
+                log("[ERR_SEM_25] "+Alex.getLine()+", El tipus de la expressió en LLEGIR es una constant");
             }
         }
 
@@ -388,7 +423,7 @@ public class Ase {
         Object var2 = attr.getValue("VAR_RIGHT");
         if (var1 instanceof TipusSimple && var2 instanceof TipusSimple) {
             if ((((TipusSimple) var1).getNom().equals("cert") || ((TipusSimple) var1).getNom().equals("fals")) && (((TipusSimple) var2).getNom().equals("cert") || ((TipusSimple) var2).getNom().equals("fals"))) {
-                System.out.print("Tipus logic");
+                //System.out.print("Tipus logic");
             } else {
                 String opb = (String) attr.getValue(TokenType.COMPLEX_ARITHMETIC_OPERATOR);
                 String ops = (String) attr.getValue(TokenType.SIMPLE_ARITHMETIC_OPERATOR);
@@ -422,10 +457,15 @@ public class Ase {
 
     public Semantic notFoundVar(String id) {
 
-        System.err.println("[ERR_SEM_8] L'identificador " + id + " no ha estat declarat");
+        log("[ERR_SEM_8] "+Alex.getLine()+", L'identificador " + id + " no ha estat declarat");
+        Alex.getLog().writeError("[ERR_SEM_8] "+Alex.getLine()+", L'identificador " + id + " no ha estat declarat");
         Variable var = new Variable(id, new TipusIndefinit(), 4);
         ts.obtenirBloc(CONTEXT_GLOBAL).inserirVariable(var);
-        return new Semantic(var, ts.getBlocActual() == CONTEXT_GLOBAL);
+
+        Semantic getVar =new Semantic(var, ts.getBlocActual() == CONTEXT_GLOBAL);
+        getVar.setIsVar(false);
+        getVar.setEstatic(true);
+        return getVar;
     }
 
     public boolean isSimpleType(Object var) {
@@ -445,10 +485,13 @@ public class Ase {
 
     public void isLogicExp(Semantic condition) {
         //TODO WARNINGS PER BUCLES INFINITS
-        if (!condition.type().getNom().equals(TIPUS_LOGIC)) {
-            //System.err.println("[ERR_SEM_6] El tipus de l'expressió no és LOGIC");
-            System.err.println("[ERR_SEM_7] La condició no es de tipus LOGIC");
-
+        if(!condition.isUndefined()) {
+            if (!condition.type().getNom().equals(TIPUS_LOGIC)) {
+                //log("[ERR_SEM_6] El tipus de l'expressió no és LOGIC");
+                log("[ERR_SEM_7] " + Alex.getLine() + ", La condició no es de tipus LOGIC");
+            }
+        }else{
+            log("[ERR_SEM_7] " + Alex.getLine() + ", La condició no es de tipus LOGIC");
         }
 
     }
@@ -463,8 +506,9 @@ public class Ase {
     }
 
     public boolean validateRelationalOp(Semantic left_side_exp, Semantic right_side_exp) {
+
         if (!left_side_exp.type().getNom().equals(TIPUS_SIMPLE) || !right_side_exp.type().getNom().equals(TIPUS_SIMPLE)) {
-            System.err.println("[ERR_SEM_5] El tipus de l'expressió no és SENCER");
+            log("[ERR_SEM_5] "+Alex.getLine()+", El tipus de l'expressió no és SENCER");
             return false;
         }
         return true;
@@ -483,7 +527,7 @@ public class Ase {
         Parametre param = (Parametre) attr.getValue("param");
         Funcio aux = (Funcio) attr.getValue(TokenType.FUNCIO);
         if (listParam.contains(param.getNom())) {
-            System.err.println("[ERR_SEM_4] Paràmetre " + param.getNom() + " doblement definit.");
+            log("[ERR_SEM_4] "+Alex.getLine()+", Paràmetre " + param.getNom() + " doblement definit.");
         } else {
 
             if (!validateTipusPas((TipusPasParametre) attr.getValue(TokenType.AMPERSAND), param.getTipus(), listParam.size() + 1)) {
@@ -505,7 +549,13 @@ public class Ase {
         if (var == null) {
             var = ts.obtenirBloc(CONTEXT_GLOBAL).obtenirVariable(id);
             if (var == null) {
-                System.err.println("[ERR_SEM_10] L'identificador [" + id + "] en part esquerra d'assignació no és una variable");
+                Funcio func =(Funcio) ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id);
+                if(func == null){
+                    log("[ERR_SEM_10] "+Alex.getLine()+", L'identificador [" + id + "] en part esquerra d'assignació no és una variable");
+                }else{
+                    log("[ERR_SEM_26] "+Alex.getLine()+", L'identificador [" + id + "] en part esquerra d'assignació és una funcio");
+                }
+
                 return false;
             }
         }
@@ -513,18 +563,20 @@ public class Ase {
     }
 
     public boolean validateAssigment(Semantic leftPart, Semantic rightPart) {
+        //leftPart.setIsVar(isVar(leftPart.varName()));
+        if(leftPart.isTipusIndefinit() || rightPart.isTipusIndefinit()) return  false;
+            leftPart.setIsVar(isVar(leftPart.varName()));
+            if(leftPart.isVar()) {
 
-            //if (!leftPart.isTipusIndefinit()) {
-            //TODO isSemanticalTo() ... FER EN EL SEMANTIC
-            //if (!leftPart.type().getNom().equals(rightPart.type().getNom()) && !rightPart.isTipusIndefinit()) {
-            if (!leftPart.isSameTypeTo(rightPart)) {
-                System.err.println("[ERR_SEM_11] La variable [" + leftPart.varName() +
-                        "] i l'expressió de assignació tenen tipus diferents. El tipus de la variable és [" + leftPart.typeName() +
-                        "] i el de l'expressió és [" + rightPart.typeName() + "]");
-                return false;
+                if (!leftPart.isSameTypeTo(rightPart)) {
+                    log("[ERR_SEM_11] "+Alex.getLine()+", La variable [" + leftPart.varName() +
+                            "] i l'expressió de assignació tenen tipus diferents. El tipus de la variable és [" + leftPart.typeName() +
+                            "] i el de l'expressió és [" + rightPart.typeName() + "]");
+                    return false;
+                }
+                return true;
             }
-
-        return true;
+        return false;
     }
 
     public void performWriteOperation(LinkedList<Semantic> arguments) {
@@ -550,7 +602,7 @@ public class Ase {
                     MIPSFactory.writeString(argument.tag());
                     break;
                 default:
-                    System.err.println("[ERR_SEM_13] El tipus de la expressió en ESCRIURE no és simple o no és una constant cadena");
+                    log("[ERR_SEM_13] "+Alex.getLine()+", El tipus de la expressió en ESCRIURE no és simple o no és una constant cadena");
             }
         }
 
@@ -560,10 +612,10 @@ public class Ase {
 
     public void validateReturn(Semantic exp_result, Funcio actFunc) {
         if (actFunc == null) {
-            System.err.println("[ERR_SEM_18] Retornar fora de funció");
+            log("[ERR_SEM_18] "+Alex.getLine()+", Retornar fora de funció");
         } else {
             if (!actFunc.getTipus().getNom().equals(exp_result.type().getNom())) {
-                System.err.println("[ERR_SEM_17] La funcio [" + actFunc.getNom() + "] ha de ser del tipus [" + actFunc.getTipus().getNom() +
+                log("[ERR_SEM_17] "+Alex.getLine()+", La funcio [" + actFunc.getNom() + "] ha de ser del tipus [" + actFunc.getTipus().getNom() +
                         "] però en l'expressió del seu valor el tpus és [" + exp_result.type().getNom() + "]");
             }
 
@@ -572,93 +624,59 @@ public class Ase {
     }
 
     public void validateFuncio(LinkedList<Semantic> parameters, Funcio actFunc) {
-        if (!parameters.isEmpty() && actFunc != null) {
+        if (!parameters.isEmpty() && actFunc != null && !(actFunc.getTipus() instanceof TipusIndefinit)) {
 
             if (parameters.size() != actFunc.getNumeroParametres()) {
-                System.err.println("[ERR_SEM_14] La funció en declaració té " + actFunc.getNumeroParametres() +
+                log("[ERR_SEM_14] "+Alex.getLine()+", La funció en declaració té " + actFunc.getNumeroParametres() +
                         " paràmetres mentre que en ús té " + parameters.size());
             } else {
-                int i = actFunc.getNumeroParametres()-1;
+                int i = 0;
                 for (Semantic param : parameters) {
                     String type =  param.typeName();
                     String  tipusNom = getTypeName(actFunc.obtenirParametre(i).getTipus());
                     if(param.isArray() && actFunc.obtenirParametre(i).getTipus() instanceof  TipusArray){
                         if(param.arrayUpperBound()!= (int) ((TipusArray) actFunc.obtenirParametre(i).getTipus()).obtenirDimensio(0).getLimitSuperior()){
-                            System.err.println("[ERR_SEM_X] La mida del vector, paramàtre " + (i+1) +
+                            log("[ERR_SEM_30] "+Alex.getLine()+", La mida del vector, paramàtre " + (i+1) +
                                     " de la funció no coincideix amb la dimensió de la seva declaració " +
                                     (int) ((TipusArray) actFunc.obtenirParametre(i).getTipus()).obtenirDimensio(0).getLimitSuperior());
                         }
                     }else{
                         if(!type.equals(tipusNom))
-                            System.err.println("[ERR_SEM_15] El tipus de paràmetre " + (i+1) +
+                            log("[ERR_SEM_15] "+Alex.getLine()+", El tipus de paràmetre " + (i+1) +
                                 " de la funció no coincideix amb el tipus en la seva declaració "+ actFunc.obtenirParametre(i).getTipus().getNom());
                     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    /*if (!type.equals(tipusNom)) {
-
-                        System.err.println("[ERR_SEM_15] El tipus de paràmetre " + (i+1) +
-                                " de la funció no coincideix amb el tipus en la seva declaració " +
-                                tipusNom);
-                    }
-                    if(param.isArray() && actFunc.obtenirParametre(i).getTipus() instanceof TipusArray){
-                        if(param.arrayUpperBound()!= (int) ((TipusArray) actFunc.obtenirParametre(i).getTipus()).obtenirDimensio(0).getLimitSuperior()){
-                            System.err.println("[ERR_SEM_X] La mida del vector, paramàtre " + (i+1) +
-                                    " de la funció no coincideix amb la dimensió de la seva declaració " +
-                                    tipusNom);
-                        }
-                    }else{
-                        System.err.println("[ERR_SEM_15] El tipus de paràmetre " + (i+1) +
-                                " de la funció no coincideix amb el tipus en la seva declaració "+ actFunc.obtenirParametre(i).getTipus().getNom());
-                    }*/
-                    i--;
+                    i++;
                 }
             }
         }
     }
 
     public Semantic validationConst(Semantic exp_result) {
-
-        if (!exp_result.isEstatic()) {
-            //ERR_SEM_19
-            System.err.println("[ERR_SEM_19] Expressio no és estàtica");
-            exp_result.setType(new TipusIndefinit());
-        } else {
-            if (exp_result.isArray()) {
-                System.err.println("[ERR_SEM_X] Constant no pot ser tipus vector");
+        if(!exp_result.isTipusIndefinit()) {
+            if (!exp_result.isEstatic()) {
+                //ERR_SEM_19
+                log("[ERR_SEM_19]" + Alex.getLine() + ", Expressio no és estàtica");
                 exp_result.setType(new TipusIndefinit());
-            } else if (exp_result.type() instanceof TipusCadena) {
+                exp_result.setEstatic(true);
+            } else {
+                if (exp_result.isArray()) {
+                    log("[ERR_SEM_27] " + Alex.getLine() + ", Constant no pot ser tipus vector");
+                    exp_result.setType(new TipusIndefinit());
+                    exp_result.setEstatic(true);
+                } else if (exp_result.type() instanceof TipusCadena) {
 
+                }
             }
+        }else{
+            log("[ERR_SEM_28]" + Alex.getLine() + ", Constant mal definida");
         }
         return exp_result;
     }
 
     public boolean validateTipusPas(TipusPasParametre pasParametre, ITipus tipusParam, int iParam) {
         if (pasParametre == TipusPasParametre.REFERENCIA) {
-            if (!(tipusParam instanceof TipusSimple)) {
-                System.err.println("[ERR_SEM_16] El paràmetre " + iParam + " de la funció no es pot passar per referència");
+            if (tipusParam instanceof TipusCadena ) {
+                log("[ERR_SEM_16] "+Alex.getLine()+", El paràmetre " + iParam + " de la funció no es pot passar per referència");
                 return false;
             }
         }
@@ -669,7 +687,7 @@ public class Ase {
         Funcio func = (Funcio) ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id);
         if (func == null) {
             func = new Funcio(id, new TipusIndefinit());
-            System.err.println("[ERR_SEM_X] Funció no declarada.");
+            log("[ERR_SEM_29] "+Alex.getLine()+", Funció no declarada previament");
         }
         return func;
     }

@@ -109,6 +109,13 @@ public class Alex {
         return __handleLexInput();
 
     }
+    public static void commit() {
+        log.close();
+    }
+
+    public static LexOutputGenerator getLog() {
+        return log;
+    }
 
     public static int nextChar(int line, char c) {
 

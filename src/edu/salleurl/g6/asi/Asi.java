@@ -201,11 +201,11 @@ public class Asi {
                 consume(TokenType.PARENTHESIS_OPEN);
                 //TODO recover and pass to llistaExp the parameter definition for the func with id _id
                 LinkedList<Semantic> parameters = llistaExp(); //TODO follow this call line and implement ase & mips stuff
-
-                ase.validateFuncio(parameters,ase.getFuncio(id));
+                Funcio func = ase.getFuncio(id);
+                ase.validateFuncio(parameters,func);
                 consume(TokenType.PARENTHESIS_CLOSE);
                 //TODO write all operations to call the func with _parameters if not_empty
-                return new Semantic(ase.getFuncio(id),false); // TODO return the return value of the func or where the return value is stored (reg)
+                return new Semantic(func,false); // TODO return the return value of the func or where the return value is stored (reg)
 
                 /*consume(TokenType.PARENTHESIS_OPEN);
 
@@ -247,6 +247,7 @@ public class Asi {
                 if(variable.isEstatic()){
                     if(isStore) {
                         // TODO generate error -> cannot perform a store against a static identifier ( constant )
+                        //variable.setIsVar(ase.isVar(id));
                     }
                 } else {
                     if(!isStore) {
@@ -351,8 +352,8 @@ public class Asi {
             case RELATIONAL_OPERATOR:
                 left_side_exp.setOpRel(consume(TokenType.RELATIONAL_OPERATOR));
                 Semantic right_side_exp = expSimple();
-
-                if(ase.validateRelationalOp(left_side_exp,right_side_exp))left_side_exp = left_side_exp.performRelationalOperation(right_side_exp);
+                left_side_exp = left_side_exp.performRelationalOperation(right_side_exp);
+                //if(ase.validateRelationalOp(left_side_exp,right_side_exp))
                 return left_side_exp;
             default:
                 return left_side_exp;
@@ -590,31 +591,32 @@ public class Asi {
                     llistaInst();
                     hasSino();
                     consume(TokenType.FISI);
+                }else {
+
+                    String tag_sino;
+                    if (condition.isEstatic()) {
+                        tag_sino = MIPSFactory.jumpIfFalse(condition.intValue());
+                    } else {
+                        tag_sino = MIPSFactory.jumpIfFalse(condition.reg());
+                    }
+
+                    llistaInst();
+                    String tag_fisi = MIPSFactory.unconditionalJump();
+
+                    MIPSFactory.setJumpPoint(tag_sino);
+                    hasSino();
+                    MIPSFactory.setJumpPoint(tag_fisi);
+
+                    consume(TokenType.FISI);
                 }
-
-                String tag_sino;
-                if(condition.isEstatic()) {
-                    tag_sino = MIPSFactory.jumpIfFalse(condition.intValue());
-                } else {
-                    tag_sino = MIPSFactory.jumpIfFalse(condition.reg());
-                }
-
-                llistaInst();
-                String tag_fisi = MIPSFactory.unconditionalJump();
-
-                MIPSFactory.setJumpPoint(tag_sino);
-                hasSino();
-                MIPSFactory.setJumpPoint(tag_fisi);
-
-                consume(TokenType.FISI);
                 break;
             case IDENTIFIER:
                 Semantic target = variable();
                 consume(TokenType.ASSIGNMENT);
                 Semantic exp_result = exp();
-                exp_result.setEstatic(false); //Funcio sempre no estatica
-                if(ase.validateAssigment(target,exp_result))
+                if(ase.validateAssigment(target,exp_result)){
                     target.store(exp_result);
+                }
                 break;
             case ESCRIURE:
                 consume(TokenType.ESCRIURE);

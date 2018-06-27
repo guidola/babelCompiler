@@ -2,6 +2,7 @@ package edu.salleurl.g6.ase; /**
  * This type was created in VisualAge.
  */
 
+import edu.salleurl.g6.alex.Alex;
 import edu.salleurl.g6.gc.MIPSFactory;
 import taulasimbols.*;
 
@@ -34,7 +35,8 @@ public class Semantic {
         if(ct.getTipus() instanceof TipusCadena) {
             setTag((String)ct.getValor());
         } else {
-            setValue("VALUE", ct.getValor());
+            if(!(ct.getTipus() instanceof TipusIndefinit))
+                setValue("VALUE", ct.getValor());
         }
         setValue("TIPUS", ct.getTipus());
         setValue("IS_GLOBAL", isGlobal);
@@ -49,6 +51,11 @@ public class Semantic {
         setValue("IS_GLOBAL", isGlobal);
         setValue("ESTATIC", true);
 
+    }
+
+    private void log(String text) {
+        System.err.println(text);
+        Alex.getLog().writeError(text);
     }
 
     /**
@@ -144,6 +151,14 @@ public class Semantic {
     public void setOffset(int offset) {
         getAttributes().put("OFFSET", offset);
     }
+    public void setIsVar(boolean isVar) {
+        getAttributes().put("IS_VAR", isVar);
+    }
+
+
+    public void setIsConst(boolean isConst) {
+        getAttributes().put("IS_CONST", isConst);
+    }
 
     public void isVectorIndexNonStatic(boolean isVector) {
         getAttributes().put("IS_VECTOR_INDEX_NON_STATIC", isVector);
@@ -152,6 +167,12 @@ public class Semantic {
     public boolean isTipusIndefinit() {
         return this.type() instanceof TipusIndefinit;
 
+    }
+    public boolean isVar(){
+        return (boolean)this.getValue("IS_VAR");
+    }
+    public Object isConst(){
+        return this.getValue("IS_CONST");
     }
 
     public boolean isArray() {
@@ -219,7 +240,14 @@ public class Semantic {
 
         // THIS SHOULD NEVER HAPPEN
         return null;
-    }public Semantic performRelationalOperation(Semantic right_side_exp) {
+    }
+    /*
+    if (!left_side_exp.type().getNom().equals(TIPUS_SIMPLE) || !right_side_exp.type().getNom().equals(TIPUS_SIMPLE)) {
+        log("[ERR_SEM_5] El tipus de l'expressió no és SENCER");
+        return false;
+    }
+    */
+    public Semantic performRelationalOperation(Semantic right_side_exp) {
 
         Semantic result = new Semantic();
 
@@ -228,29 +256,37 @@ public class Semantic {
         if(this.isUndefined() || right_side_exp.isUndefined()) {
             return handleOperationWithUndefined(this, right_side_exp);
         }
+        if(this.isSameTypeTo(right_side_exp)) {
 
-        result.setEstatic(this.isEstatic() && right_side_exp.isEstatic());
 
-        if (this.isEstatic()) {
-            if (right_side_exp.isEstatic()) {
-                result.setValue(performComparison(this.intValue(), this.opRel(), right_side_exp.intValue()));
+            result.setEstatic(this.isEstatic() && right_side_exp.isEstatic());
+
+            if (this.isEstatic()) {
+                if (right_side_exp.isEstatic()) {
+                    result.setValue(performComparison(this.intValue(), this.opRel(), right_side_exp.intValue()));
+                } else {
+                    result.setRegister(MIPSFactory.performComparison(this.intValue(), this.opRel(), right_side_exp.reg()));
+                }
             } else {
-                result.setRegister(MIPSFactory.performComparison(this.intValue(), this.opRel(), right_side_exp.reg()));
+                if (right_side_exp.isEstatic()) {
+                    result.setRegister(MIPSFactory.performComparison(this.reg(), this.opRel(), right_side_exp.intValue()));
+                } else {
+                    result.setRegister(MIPSFactory.performComparison(this.reg(), this.opRel(), right_side_exp.reg()));
+                }
             }
-        } else {
-            if (right_side_exp.isEstatic()) {
-                result.setRegister(MIPSFactory.performComparison(this.reg(), this.opRel(), right_side_exp.intValue()));
-            } else {
-                result.setRegister(MIPSFactory.performComparison(this.reg(), this.opRel(), right_side_exp.reg()));
-            }
+        }else{
+            log("[ERR_SEM_33] "+ Alex.getLine()+", Les dos parts de l'operació relacional no son del mateix tipus");
+            result.setType(new TipusIndefinit());
+            result.setEstatic(true);
+            result.setIsVar(false);
+            return result;
         }
-
         return result;
     }
 
     public Semantic performUnaryOperation(Semantic operand) {
 
-        if (this.opu() == null) return operand;
+        if (this.opu() == null || operand.isUndefined()) return operand;
 
         Semantic result = new Semantic();
         result.setType(operand.type());
@@ -268,25 +304,28 @@ public class Semantic {
                     } else  if(operand.isInt()){
                         result.setValue(operand.intValue() == 0 ? 1 : 0);
                     }else{
-                        System.err.println("[ERR_SEM_X] El operand no es de tipus sencer o logic");
+                        log("[ERR_SEM_34] El operand no es de tipus sencer o logic");
                     }
                 } else {
                     if (this.opu().equals("-")) {
                         if(operand.isInt()) {
                             result.setValue(operand.intValue() * (-1));
                         } else {
-                            System.err.println("[ERR_SEM_X] La operació "+ this.opu()+" requereix un operand sencer" );
+                            log("[ERR_SEM_35] La operació "+ this.opu()+" requereix un operand sencer" );
                         }
                     }
                 }
             } else {
                 if(this.opu().equals("-") && operand.isBool()) {
-                    System.err.println("[ERR_SEM_X] La operació "+ this.opu()+" requereix un operand sencer i ha obtingut un operand logic" );
+                    log("[ERR_SEM_36] La operació "+ this.opu()+" requereix un operand sencer i ha obtingut un operand logic" );
                 } else {
                     result.setRegister(MIPSFactory.performOpu(this.opu(), operand.reg()));
                 }
             }
+        }else{
+
         }
+
         return result;
     }
 
@@ -415,10 +454,13 @@ public class Semantic {
                     }
                 }
             }else{
-                System.err.println("[ERR_SEM_X] No es pot operar amb expressions de tipus array o cadena");
+                log("[ERR_SEM_31] No es pot operar amb expressions de tipus array o cadena");
             }
         }else{
-            System.err.println("[ERR_SEM_X] La part esquerra i la part dreta no son del mateix tipus");
+            log("[ERR_SEM_32] "+Alex.getLine()+", Operands de diferent tipus");
+            result.setType(new TipusIndefinit());
+            result.setEstatic(true);
+            return result;
         }
 
 
@@ -541,7 +583,7 @@ public class Semantic {
         } else if (this.type() instanceof TipusCadena) {
             return this.type().getNom();
         }else if(this.type() instanceof TipusArray){
-            return this.arrayType().getNom();
+            return this.type().getNom();
         }
         return "THIS_SHOULD_NEVER_HAPPEN";
     }
@@ -550,7 +592,8 @@ public class Semantic {
         if (!this.isTipusIndefinit() && !right_part.isTipusIndefinit()) {
             if (right_part.type() instanceof TipusSimple) {
                 return this.type().getNom().equals(right_part.type().getNom());
-            } else if (right_part.type() instanceof TipusArray) {
+            } else if (right_part.isArray() && this.isArray()) {
+
                 return this.arrayType().getNom().equals(right_part.arrayType().getNom());
             }
             return false;
