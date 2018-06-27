@@ -235,20 +235,70 @@ public class Ase {
 
     }
 
-    private Semantic undefined() {
+    public int computeParametersTotalSize(Funcio func) {
+
+        int size = 0;
+        for(int i = 0 ; i < func.getNumeroParametres() ; i++) {
+            size += func.obtenirParametre(i).getTipus().getTamany();
+        }
+
+        return size;
+    }
+
+    public void stackParameters(LinkedList<Semantic> parameter_values) {
+
+        for (Semantic parameter : parameter_values) {
+
+            switch(parameter.typeId()) {
+                case Ase.TIPUS_SIMPLE:
+                case Ase.TIPUS_LOGIC:
+                    if(parameter.isEstatic()) {
+                        //TODO validate it is not reference :D
+                        MIPSFactory.stackParameter(parameter.intValue(), parameter.addressOffset());
+                    } else {
+                        if(parameter.isRef()){
+                            if(parameter.isVectorIndexNonStatic()) {
+                                MIPSFactory.stackParameter(parameter.offsetRegister(), parameter.addressOffset());
+                            } else {
+                                MIPSFactory.stackParameter(parameter.offset(), parameter.addressOffset());
+                            }
+                        } else {
+                            MIPSFactory.stackParameter(parameter.reg(), parameter.addressOffset());
+                        }
+                    }
+                    break;
+
+                case Ase.TIPUS_ARRAY:
+                    if(parameter.isRef()) {
+                        MIPSFactory.stackParameter(parameter.offset(), parameter.addressOffset());
+                    } else {
+                        for(int i = 0; i <= parameter.arrayUpperBound(); i++) {
+                            MIPSFactory.stackArrayCell(parameter.offset(), i, parameter.isGlobal(), parameter.addressOffset());
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    public Semantic undefined() {
         Semantic undefined = new Semantic();
         undefined.setType(new TipusIndefinit());
         undefined.setEstatic(true);
         return undefined;
     }
 
-    public Semantic validateArrayAccessAndLoadCell(String id, Semantic index) {
+    public Semantic validateArrayAccessAndLoadCellAndOffset(String id, Semantic index) {
 
         Semantic vector = getArray(id);
         if (vector.isUndefined()) {
             MIPSFactory.returnRegister(index);
             return undefined();
         }
+
+        Semantic cell = new Semantic();
+        cell.setType(vector.arrayType());
+        cell.setEstatic(false);
 
         if (!index.isInt()) {
             if (!index.isUndefined()) {
@@ -258,14 +308,14 @@ public class Ase {
             index.setEstatic(true);
         }
 
-        Semantic cell = new Semantic();
-        cell.setType(vector.arrayType());
-        cell.setEstatic(false);
-
         if (index.isEstatic()) {
+            cell.isVectorIndexNonStatic(false);
+            cell.setOffset(validateArrayBounds(vector, index) ?
+                    vector.offset() + index.intValue() * vector.arrayType().getTamany() : vector.offset());
             cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), validateArrayBounds(vector, index) ? index.intValue() : 0, vector.isGlobal()));
         } else {
-            cell.setRegister(MIPSFactory.validateAndLoadArrayCell(vector.offset(), index.reg(), vector.arrayLowerBound(),
+            cell.isVectorIndexNonStatic(true);
+            cell.merge(MIPSFactory.validateAndGetOffsetPlusLoadArrayCell(vector.offset(), index.reg(), vector.arrayLowerBound(),
                     vector.arrayUpperBound(), vector.isGlobal()));
         }
         return cell;
@@ -470,32 +520,26 @@ public class Ase {
         return true;
     }
 
-    public void addParamVars(Funcio var) {
+    /*public void addParamVars(Funcio var) {
         for (int i = 0; i < var.getNumeroParametres(); i++) {
             if (var.obtenirParametre(i) != null) {
                 ts.obtenirBloc(ts.getBlocActual()).inserirVariable(var.obtenirParametre(i));
             }
         }
-    }
+    }*/
 
-    public Semantic addParam(Semantic attr) {
-        ArrayList<String> listParam = (ArrayList) attr.getValue("listParam");
-        Parametre param = (Parametre) attr.getValue("param");
-        Funcio aux = (Funcio) attr.getValue(TokenType.FUNCIO);
-        if (listParam.contains(param.getNom())) {
+    public void addParam(Parametre param, int n_param) {
+
+        //TODO check if current parameter is already a defined symbol in currrent context
+        if (false) {
             System.err.println("[ERR_SEM_4] Paràmetre " + param.getNom() + " doblement definit.");
         } else {
-
-            if (!validateTipusPas((TipusPasParametre) attr.getValue(TokenType.AMPERSAND), param.getTipus(), listParam.size() + 1)) {
+            if (!validateTipusPas(param, n_param)) {
                 param.setTipusPasParametre(TipusPasParametre.VALOR);
             }
 
-            listParam.add(param.getNom());
-            attr.setValue("listParam", listParam);
-            aux.inserirParametre(param);
-            attr.setValue(TokenType.FUNCIO, aux);
+            addNewVar(param); //TODO SAMU he fet que aquesta funcio faci el que feia addparamvars aixi que he cridat aixo. verify
         }
-        return attr;
     }
 
 
@@ -575,12 +619,13 @@ public class Ase {
 
     }
 
-    public void validateFuncio(LinkedList<Semantic> parameters, Funcio actFunc) {
+    public boolean validateFuncio(LinkedList<Semantic> parameters, Funcio actFunc) {
         if (!parameters.isEmpty() && actFunc != null) {
 
             if (parameters.size() != actFunc.getNumeroParametres()) {
                 System.err.println("[ERR_SEM_14] La funció en declaració té " + actFunc.getNumeroParametres() +
                         " paràmetres mentre que en ús té " + parameters.size());
+                return false;
             } else {
                 int i = actFunc.getNumeroParametres()-1;
                 for (Semantic param : parameters) {
@@ -591,35 +636,16 @@ public class Ase {
                             System.err.println("[ERR_SEM_X] La mida del vector, paramàtre " + (i+1) +
                                     " de la funció no coincideix amb la dimensió de la seva declaració " +
                                     (int) ((TipusArray) actFunc.obtenirParametre(i).getTipus()).obtenirDimensio(0).getLimitSuperior());
+                            return false;
                         }
                     }else{
-                        if(!type.equals(tipusNom))
+                        if(!type.equals(tipusNom)){
                             System.err.println("[ERR_SEM_15] El tipus de paràmetre " + (i+1) +
-                                " de la funció no coincideix amb el tipus en la seva declaració "+ actFunc.obtenirParametre(i).getTipus().getNom());
+                                    " de la funció no coincideix amb el tipus en la seva declaració "+ actFunc.obtenirParametre(i).getTipus().getNom());
+                            return false;
+                        }
+
                     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                     /*if (!type.equals(tipusNom)) {
 
                         System.err.println("[ERR_SEM_15] El tipus de paràmetre " + (i+1) +
@@ -640,6 +666,7 @@ public class Ase {
                 }
             }
         }
+        return true;
     }
 
     public Semantic validationConst(Semantic exp_result) {
@@ -659,10 +686,10 @@ public class Ase {
         return exp_result;
     }
 
-    public boolean validateTipusPas(TipusPasParametre pasParametre, ITipus tipusParam, int iParam) {
-        if (pasParametre == TipusPasParametre.REFERENCIA) {
-            if (!(tipusParam instanceof TipusSimple)) {
-                System.err.println("[ERR_SEM_16] El paràmetre " + iParam + " de la funció no es pot passar per referència");
+    public boolean validateTipusPas(Parametre param, int n_param) {
+        if (param.getTipusPasParametre() == TipusPasParametre.REFERENCIA) {
+            if (!(param.getTipus() instanceof TipusSimple)) {
+                System.err.println("[ERR_SEM_16] El paràmetre " + n_param + " de la funció no es pot passar per referència");
                 return false;
             }
         }

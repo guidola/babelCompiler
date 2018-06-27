@@ -99,6 +99,9 @@ public class Asi {
                 var.setNom(consume(TokenType.IDENTIFIER));
                 var.setDesplacament(OffsetFactory.nextOffset(var.getTipus().getTamany()));
                 consume(TokenType.STATEMENT_SEPARATOR);
+                if(actFunc != null) {
+                    actFunc.setTamanyFrame(actFunc.getTamanyFrame() + var.getTipus().getTamany());
+                }
                 ase.addNewVar(var);
                 break;
 
@@ -199,13 +202,27 @@ public class Asi {
         switch (lat.getType()) {
             case PARENTHESIS_OPEN:
                 consume(TokenType.PARENTHESIS_OPEN);
-                //TODO recover and pass to llistaExp the parameter definition for the func with id _id
-                LinkedList<Semantic> parameters = llistaExp(); //TODO follow this call line and implement ase & mips stuff
-
-                ase.validateFuncio(parameters,ase.getFuncio(id));
+                Funcio func = ase.getFuncio(id);
+                LinkedList<Semantic> parameter_values = llistaExp(); //TODO follow this call line and implement ase & mips stuff
+                for(int i = 0 ; i < func.getNumeroParametres() ; i++) {
+                    parameter_values.get(i).isRef(func.obtenirParametre(i).getTipusPasParametre() == TipusPasParametre.REFERENCIA);
+                    parameter_values.get(i).setAddressOffset(func.obtenirParametre(i).getDesplacament());
+                }
                 consume(TokenType.PARENTHESIS_CLOSE);
+
                 //TODO write all operations to call the func with _parameters if not_empty
-                return new Semantic(ase.getFuncio(id),false); // TODO return the return value of the func or where the return value is stored (reg)
+                if(ase.validateFuncio(parameter_values, func)) {
+                    MIPSFactory.stackContext();
+                    ase.stackParameters(parameter_values);
+                    MIPSFactory.moveFpToSp();
+                    MIPSFactory.moveSp(func.getTamanyFrame());
+                    MIPSFactory.jal(func.getEtiqueta());
+
+                    // TODO recover context on function return and obtain return value
+                    // TODO return the return value of the func or where the return value is stored (reg)
+                }
+
+                return ase.undefined(); // return undefined if we couldnt execute the function.
 
                 /*consume(TokenType.PARENTHESIS_OPEN);
 
@@ -232,7 +249,7 @@ public class Asi {
                 if(isStore) {
                     variable = ase.validateArrayAccessAndGetOffset(id, expression);
                 } else {
-                    variable = ase.validateArrayAccessAndLoadCell(id, expression);
+                    variable = ase.validateArrayAccessAndLoadCellAndOffset(id, expression);
                 }
                 break;
 
@@ -401,7 +418,7 @@ public class Asi {
             //case IDENTIFIER:
             //probably is a function declaration badly typed if it is not inici
             case FUNCIO:
-                attr = decFunc(attr);
+                decFunc();
                 llistaDecFunc();
                 break;
             default:
@@ -409,113 +426,84 @@ public class Asi {
         }
     }
 
-    private Semantic decFunc(Semantic attr) throws SyntacticException {
+    private void decFunc() throws SyntacticException {
+
         ase.addNewBlock();
         consume(TokenType.FUNCIO);
-        Funcio func = new Funcio();
-        func.setNom(lat.getLexem());
+        Funcio function = new Funcio();
+        function.setNom(consume(TokenType.IDENTIFIER));
 
-        consume(TokenType.IDENTIFIER);
         consume(TokenType.PARENTHESIS_OPEN);
-
-
-        attr.setValue(TokenType.FUNCIO, func);
-        //TODO VALIDATE IF IS NECESSARY
-        ArrayList<String> listParam = new ArrayList<>();
-        attr.setValue("listParam",listParam);
-        attr = llistaParam(attr);
-
-        func = (Funcio) attr.getValue(TokenType.FUNCIO);
-
-        consume(TokenType.PARENTHESIS_CLOSE);
-        consume(TokenType.RETURN_TYPE_PREFIX);
-        func.setTipus(new TipusSimple(lat.getLexem(), 4));
-        consume(TokenType.SIMPLE_TYPE);
-        consume(TokenType.BRACKETS_OPEN);
-        ase.addParamVars(func);
-        func = ase.addNewFuncio(func);
-        actFunc = func;
+        LinkedList<Parametre> parameters = llistaParam(new LinkedList<>());
         OffsetFactory.reset();
+        parameters.forEach(function::inserirParametre);
+        consume(TokenType.PARENTHESIS_CLOSE);
+        function.setTamanyFrame(ase.computeParametersTotalSize(function));
+        consume(TokenType.RETURN_TYPE_PREFIX);
+        String type = consume(TokenType.SIMPLE_TYPE);
+        function.setTipus(new TipusSimple(
+                type,
+                type.equals(Ase.TIPUS_SIMPLE) ? MIPSFactory.TIPUS_SIMPLE_SIZE : MIPSFactory.TIPUS_LOGIC_SIZE)
+        );
+
+        consume(TokenType.BRACKETS_OPEN);
+        function.setEtiqueta(MIPSFactory.setJumpPoint());
+        ase.addNewFuncio(function);
+        this.actFunc = function;
         llistaDecVar();
         llistaInst();
         consume(TokenType.BRACKETS_CLOSE);
+
         consume(TokenType.STATEMENT_SEPARATOR);
         ase.deleteActualBlock();
-        actFunc = null;
-        attr.setValue(TokenType.FUNCIO, func);
-        return attr;
+        this.actFunc = null;
+
     }
 
-    private Semantic llistaParam(Semantic attr) throws SyntacticException {
+    private LinkedList<Parametre> llistaParam(LinkedList<Parametre> parameters) throws SyntacticException {
         Parametre param = new Parametre();
         switch (lat.getType()) {
             case SIMPLE_TYPE:
-                param.setTipus(tipus());
-
-                attr = isRef(attr);
-                param.setTipusPasParametre((TipusPasParametre) attr.getValue(TokenType.AMPERSAND));
-
-                //ase.validateTipusPas((String )attr.getValue(TokenType.AMPERSAND), param.getTipus());
-                param.setNom(lat.getLexem());
-                consume(TokenType.IDENTIFIER);
-                attr.setValue("param",param);
-
-                attr = ase.addParam(attr);
-                attr.removeAttribute(TokenType.AMPERSAND);
-
-
-                attr = llistaParamAux(attr);
-                break;
             case VECTOR:
-
                 param.setTipus(tipus());
+                param.setTipusPasParametre(isRef() ? TipusPasParametre.REFERENCIA : TipusPasParametre.VALOR);
+                //ase.validateTipusPas((String )attr.getValue(TokenType.AMPERSAND), param.getTipus());
+                param.setNom(consume(TokenType.IDENTIFIER));
+                param.setDesplacament(OffsetFactory.nextOffset(param.getTipus().getTamany()));
 
-                attr = isRef(attr);
-                param.setTipusPasParametre((TipusPasParametre) attr.getValue(TokenType.AMPERSAND));
+                parameters.add(param);
+                ase.addParam(param, parameters.size());
 
-                param.setNom(lat.getLexem());
-                consume(TokenType.IDENTIFIER);
-                attr.setValue("param",param);
-                attr = ase.addParam(attr);
-                attr.removeAttribute(TokenType.AMPERSAND);
-                attr = llistaParamAux(attr);
-                break;
+                return llistaParamAux(parameters);
+
             default:
-                break;
+                return parameters;
         }
         //attr.setValue(TokenType.FUNCIO, aux);
-        return attr;
     }
 
-    private Semantic isRef(Semantic attr) throws SyntacticException {
+    private boolean isRef() throws SyntacticException {
         switch (lat.getType()) {
             case AMPERSAND:
-                attr.setValue(TokenType.AMPERSAND, TipusPasParametre.REFERENCIA);
                 consume(TokenType.AMPERSAND);
-                break;
+                return true;
             default:
-                attr.setValue(TokenType.AMPERSAND, TipusPasParametre.VALOR);
-                break;
+                return false;
         }
-        return attr;
     }
 
-    private Semantic llistaParamAux(Semantic attr) throws SyntacticException {
+    private LinkedList<Parametre> llistaParamAux(LinkedList<Parametre> parameters) throws SyntacticException {
         switch (lat.getType()) {
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);
-                attr = llistaParam(attr);
-                break;
+                return llistaParam(parameters);
             default:
-                break;
+                return parameters;
         }
-        return attr;
     }
 
     private void llistaInst() throws SyntacticException {
-        /*inst();
-        consume(TokenType.STATEMENT_SEPARATOR);
-        llistaInstAux();*/
+
         switch (lat.getType()) {
             case REPETIR:
             case MENTRE:
@@ -628,10 +616,14 @@ public class Asi {
                 consume(TokenType.PARENTHESIS_CLOSE);
                 break;
             case RETORNAR:
-                // TODO implement retornar code generation ( stack management and so )
                 consume(TokenType.RETORNAR);
                 Semantic exp_return = exp();
-                ase.validateReturn(exp_return,actFunc);
+                ase.validateReturn(exp_return, actFunc);
+                if(exp_return.isEstatic()) {
+                    MIPSFactory.retornar(exp_return.intValue());
+                } else {
+                    MIPSFactory.retornar(exp_return.reg());
+                }
                 break;
             default:
                 throw (ExceptionFactory.inst(lat.getType()));
