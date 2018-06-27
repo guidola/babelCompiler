@@ -320,20 +320,20 @@ public class Semantic {
                     } else  if(operand.isInt()){
                         result.setValue(operand.intValue() == 0 ? 1 : 0);
                     }else{
-                        log("[ERR_SEM_34] El operand no es de tipus sencer o logic");
+                        log("[ERR_SEM_34] "+Alex.getLine()+",El operand no es de tipus sencer o logic");
                     }
                 } else {
                     if (this.opu().equals("-")) {
                         if(operand.isInt()) {
                             result.setValue(operand.intValue() * (-1));
                         } else {
-                            log("[ERR_SEM_35] La operació "+ this.opu()+" requereix un operand sencer" );
+                            log("[ERR_SEM_35] "+Alex.getLine()+", La operació "+ this.opu()+" requereix un operand sencer" );
                         }
                     }
                 }
             } else {
                 if(this.opu().equals("-") && operand.isBool()) {
-                    log("[ERR_SEM_36] La operació "+ this.opu()+" requereix un operand sencer i ha obtingut un operand logic" );
+                    log("[ERR_SEM_36] "+Alex.getLine()+", La operació "+ this.opu()+" requereix un operand sencer i ha obtingut un operand logic" );
                 } else {
                     result.setRegister(MIPSFactory.performOpu(this.opu(), operand.reg()));
                 }
@@ -470,7 +470,7 @@ public class Semantic {
                     }
                 }
             }else{
-                log("[ERR_SEM_31] No es pot operar amb expressions de tipus array o cadena");
+                log("[ERR_SEM_31] "+Alex.getLine()+", No es pot operar amb expressions de tipus array o cadena");
             }
         }else{
             log("[ERR_SEM_32] "+Alex.getLine()+", Operands de diferent tipus");

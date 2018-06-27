@@ -264,6 +264,7 @@ public class Asi {
                 if(variable.isEstatic()){
                     if(isStore) {
                         // TODO generate error -> cannot perform a store against a static identifier ( constant )
+
                     }
                 } else {
                     if(!isStore) {
@@ -471,8 +472,7 @@ public class Asi {
                 param.setNom(consume(TokenType.IDENTIFIER));
                 param.setDesplacament(OffsetFactory.nextOffset(param.getTipus().getTamany()));
 
-                parameters.add(param);
-                ase.addParam(param, parameters.size());
+                ase.addParam(param, parameters);
 
                 return llistaParamAux(parameters);
 
