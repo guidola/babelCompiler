@@ -26,5 +26,5 @@ funcio diguesHola() : sencer {
 Inici
 	//i = suma(2, 3);
 	//escriure(i);
-	 i = diguesHola();
+	i = diguesHola();
 Fi
