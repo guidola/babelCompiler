@@ -22,9 +22,20 @@ public class Semantic {
     public Semantic(Variable var, boolean isGlobal) {
 
         attributes = new Hashtable();
-        setValue("OFFSET", var.getDesplacament());
         setValue("TIPUS", var.getTipus());
         setValue("IS_GLOBAL", isGlobal);
+        if(var instanceof Parametre) {
+            isRef(((Parametre) var).getTipusPasParametre() == TipusPasParametre.REFERENCIA);
+            if(isRef()) {
+                setOffsetRegister(MIPSFactory.deReferenceAddress(var.getDesplacament()));
+            } else {
+                setOffset(var.getDesplacament());
+            }
+
+        } else {
+            isRef(false);
+            setOffset(var.getDesplacament());
+        }
         setValue("ESTATIC", false);
 
     }
@@ -138,6 +149,10 @@ public class Semantic {
 
     public void isRef(boolean isRef) {
         getAttributes().put("IS_REF", isRef);
+    }
+
+    public void passAsRef(boolean isRef) {
+        getAttributes().put("PASS_AS_REF", isRef);
     }
 
     public void setUOperator(String operator) {
@@ -496,11 +511,11 @@ public class Semantic {
             return;
         }
 
-        if(this.isVectorIndexNonStatic()){
+        if(this.isRef() || this.isVectorIndexNonStatic()){
             if(expression.isEstatic()){
-                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.intValue());
+                MIPSFactory.performAssignment(this.offsetRegister(), this.isGlobal(), expression.intValue());
             } else {
-                MIPSFactory.performAssignment(this.reg(), this.isGlobal(), expression.reg());
+                MIPSFactory.performAssignment(this.offsetRegister(), this.isGlobal(), expression.reg());
             }
         } else {
             if(expression.isEstatic()){
@@ -661,6 +676,10 @@ public class Semantic {
 
     public boolean isRef() {
         return (boolean) attributes.get("IS_REF");
+    }
+
+    public boolean passAsReference() {
+        return (boolean) attributes.get("PASS_AS_REF");
     }
 
     public int addressOffset() {

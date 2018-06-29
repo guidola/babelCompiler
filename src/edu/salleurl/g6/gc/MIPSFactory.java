@@ -28,6 +28,10 @@ public class MIPSFactory {
     public static final int CMP_OK = 0x01;
     public static final int CMP_KO = 0x00;
 
+    private static final int OFFSET_OLD_FP = 72;
+    private static final int OFFSET_OLD_RA = 76;
+    private static final int OFFSET_RET_VAL = 80;
+
     private static PrintWriter out;
     private static TagGenerator tags = new TagGenerator();
     private static RegisterHandler registers = new RegisterHandler();
@@ -179,8 +183,19 @@ public class MIPSFactory {
         return result;
     }
 
+    private static Semantic loadVectorCellAndGetOffset(String r_base_offset, String index_reg, boolean isGlobal) {
+        Semantic result = new Semantic();
+        result.setOffsetRegister(add(muli(index_reg, REGISTER_SIZE), r_base_offset));
+        result.setRegister(lw(duplicate(result.offsetRegister()), isGlobal));
+        return result;
+    }
+
     private static String loadVectorCell(int base_offset, int index, boolean isGlobal) {
         return lw(index * REGISTER_SIZE + base_offset, isGlobal);
+    }
+
+    private static String loadVectorCell(String r_base_offset, int index, boolean isGlobal) {
+        return lw(addi(r_base_offset, index * REGISTER_SIZE) , isGlobal);
     }
 
     /** LOAD LITERAL **/
@@ -486,20 +501,39 @@ public class MIPSFactory {
 
     }
 
+    private static void restoreSp() {
+        out.println("addiu $sp, $fp, 84");
+    }
+
+    private static void loadFromStack(String register, int offset) {
+        out.println("lw " + register + ", " + (-offset) + "($sp)");
+    }
+
+    private static void restoreRegister(String register, int offset) {
+        loadFromStack(register, offset);
+    }
+
+    private static void restoreGPRs() {
+        int offset = 0;
+        for (String register : RegisterHandler.registerPool) {
+            restoreRegister(register, offset);
+            offset += REGISTER_SIZE;
+        }
+
+    }
+
     private static void ret(String r1) {
-        out.println("lw " + r1 + ", 4($fp)");
+        out.println("sw " + r1 + ", 4($fp)");
         registers.returnRegister(r1);
         out.println("jr $ra");
     }
 
     private static void ret(int literal) {
         String r1 = li(literal);
-        out.println("lw " + r1 + ", 4($fp)");
+        out.println("sw " + r1 + ", 4($fp)");
         registers.returnRegister(r1);
         out.println("jr $ra");
     }
-
-
 
     /* ---------------------------------------------------------------------------------------------------- */
     /** INTERFACE FOR ASI **/
@@ -525,14 +559,28 @@ public class MIPSFactory {
         return lw(offset, isGlobal);
     }
 
+    public static String loadVariable(String r_offset, boolean isGlobal) {
+        return lw(r_offset, isGlobal);
+    }
+
     public static String loadArrayCell(int base_offset, int index, boolean isGlobal) {
         return loadVectorCell(base_offset, index, isGlobal);
+    }
+
+    public static String loadArrayCell(String r_base_offset, int index, boolean isGlobal) {
+        return loadVectorCell(r_base_offset, index, isGlobal);
     }
 
     public static Semantic validateAndGetOffsetPlusLoadArrayCell(int base_offset, String index_reg, int min_position, int max_position, boolean isGlobal) {
 
         validateVectorAccess(index_reg, min_position, max_position);
         return loadVectorCellAndGetOffset(base_offset, index_reg, isGlobal);
+    }
+
+    public static Semantic validateAndGetOffsetPlusLoadArrayCell(String r_base_offset, String index_reg, int min_position, int max_position, boolean isGlobal) {
+
+        validateVectorAccess(index_reg, min_position, max_position);
+        return loadVectorCellAndGetOffset(r_base_offset, index_reg, isGlobal);
     }
 
     public static String defineString(String str) {
@@ -645,6 +693,11 @@ public class MIPSFactory {
 
     public static String performComparison(String r1, String operation, String r2) {
         return cmp(r1, operation, r2);
+    }
+
+    public static String validateAndGetArrayCellOffset(String r_base_offset, String r_index, int min_position, int max_position) {
+        validateVectorAccess(r_index, min_position, max_position);
+        return add(muli(r_index, REGISTER_SIZE), r_base_offset);
     }
 
     public static String validateAndGetArrayCellOffset(int base_offset, String r_index, int min_position, int max_position) {
@@ -800,6 +853,27 @@ public class MIPSFactory {
 
     public static void jal(String tag) {
         out.println("jal " + tag);
+    }
+
+    public static void restoreContext() {
+        restoreSp();
+        restoreGPRs();
+        restoreRegister(RegisterHandler.FP, OFFSET_OLD_FP);
+        restoreRegister(RegisterHandler.RA, OFFSET_OLD_RA);
+    }
+
+    public static String obtainReturnValue() {
+        String rDest = registers.getRegister();
+        restoreRegister(rDest, OFFSET_RET_VAL);
+        return rDest;
+    }
+
+    public static String deReferenceAddress(int offset) {
+        return lw(offset, false);
+    }
+
+    public static String computeRealAddress(int offset, boolean isGlobal) {
+        return subi(isGlobal ? RegisterHandler.GP : RegisterHandler.FP, offset);
     }
 
     /** SOME HELPERS THAT DO NOT  GENERATE ASSEMBLY CODE **/

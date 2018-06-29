@@ -233,6 +233,7 @@ public class Ase {
         cell.setType(vector.arrayType());
         cell.setEstatic(false);
         cell.setGlobal(vector.isGlobal());
+        cell.isRef(false);
 
         //if index is not int then set index to 0 and static
         if (!index.isInt()) {
@@ -244,22 +245,84 @@ public class Ase {
             index.setEstatic(true);
         }
 
+        // TODO confirm if register result of reference access is stored at register or registerOffset
+        // TODO implement reference access on the other vector access function and on the single variable store and load actions
         if (index.isEstatic()) {
-            // TODO evaluate array bounds ( remember that upper bound is the last working cell of the array, not its dimension )
+
             cell.isVectorIndexNonStatic(false);
-            cell.setOffset(validateArrayBounds(vector, index) ?
-                    vector.offset() + index.intValue() * vector.arrayType().getTamany() : vector.offset());
+            if(vector.isRef()){
+                cell.setOffsetRegister(validateArrayBounds(vector, index) ?
+                        MIPSFactory.performAdd(vector.offsetRegister(), index.intValue() * vector.arrayType().getTamany()) :
+                        vector.reg());
+            } else {
+                cell.setOffset(validateArrayBounds(vector, index) ?
+                        vector.offset() + index.intValue() * vector.arrayType().getTamany() : vector.offset());
+            }
 
         } else {
             cell.isVectorIndexNonStatic(true);
-            cell.setRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offset(), index.reg(), vector.arrayLowerBound(),
-                    vector.arrayUpperBound()));
-
+            if(vector.isRef()) {
+                cell.setOffsetRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offsetRegister(), index.reg(), vector.arrayLowerBound(),
+                        vector.arrayUpperBound()));
+            } else {
+                cell.setOffsetRegister(MIPSFactory.validateAndGetArrayCellOffset(vector.offset(), index.reg(), vector.arrayLowerBound(),
+                        vector.arrayUpperBound()));
+            }
         }
         cell.setIsVar(true);
         return cell;
 
     }
+
+    public Semantic validateArrayAccessAndLoadCellAndOffset(String id, Semantic index) {
+
+        Semantic vector = getArray(id);
+        if (vector.isUndefined()) {
+            MIPSFactory.returnRegister(index);
+            return undefined();
+        }
+
+        Semantic cell = new Semantic();
+        cell.setType(vector.arrayType());
+        cell.setEstatic(false);
+        cell.isRef(false);
+
+        if (!index.isInt()) {
+            if (!index.isUndefined()) {
+                System.err.println("[ERR_SEM_12] El tipus de l'index d'accés del vector no és SENCER");
+            }
+            index.setValue(0);
+            index.setEstatic(true);
+        }
+
+        if (index.isEstatic()) {
+            cell.isVectorIndexNonStatic(false);
+            if(vector.isRef()) {
+                cell.setOffsetRegister(validateArrayBounds(vector, index) ?
+                        MIPSFactory.performAdd(vector.offsetRegister(), index.intValue() * vector.arrayType().getTamany()) :
+                        vector.reg());
+                cell.setRegister(MIPSFactory.loadArrayCell(vector.offsetRegister(), validateArrayBounds(vector, index) ? index.intValue() : 0, vector.isGlobal()));
+            } else {
+                cell.setOffset(validateArrayBounds(vector, index) ?
+                        vector.offset() + index.intValue() * vector.arrayType().getTamany() : vector.offset());
+                cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), validateArrayBounds(vector, index) ? index.intValue() : 0, vector.isGlobal()));
+            }
+
+
+        } else {
+            cell.isVectorIndexNonStatic(true);
+            if(vector.isRef()) {
+                cell.merge(MIPSFactory.validateAndGetOffsetPlusLoadArrayCell(vector.offsetRegister(), index.reg(), vector.arrayLowerBound(),
+                        vector.arrayUpperBound(), vector.isGlobal()));
+            } else {
+                cell.merge(MIPSFactory.validateAndGetOffsetPlusLoadArrayCell(vector.offset(), index.reg(), vector.arrayLowerBound(),
+                        vector.arrayUpperBound(), vector.isGlobal()));
+            }
+
+        }
+        return cell;
+    }
+
 
     public int computeParametersTotalSize(Funcio func) {
 
@@ -281,13 +344,17 @@ public class Ase {
                     if(parameter.isEstatic()) {
                         //TODO validate it is not reference :D
                         MIPSFactory.stackParameter(parameter.intValue(), parameter.addressOffset());
+
                     } else {
-                        if(parameter.isRef()){
-                            if(parameter.isVectorIndexNonStatic()) {
+                        if(parameter.passAsReference()){
+                            // when passing a pointer pass a new pointer to the original value instead of double referencing it.
+                            // The semantics allow for double referencing when no dynamic mem exists which makes no sense
+                            if(parameter.isVectorIndexNonStatic() || parameter.isRef()) {
                                 MIPSFactory.stackParameter(parameter.offsetRegister(), parameter.addressOffset());
                             } else {
-                                MIPSFactory.stackParameter(parameter.offset(), parameter.addressOffset());
+                                MIPSFactory.stackParameter(MIPSFactory.computeRealAddress(parameter.offset(), parameter.isGlobal()), parameter.addressOffset());
                             }
+
                         } else {
                             MIPSFactory.stackParameter(parameter.reg(), parameter.addressOffset());
                         }
@@ -295,8 +362,13 @@ public class Ase {
                     break;
 
                 case Ase.TIPUS_ARRAY:
-                    if(parameter.isRef()) {
-                        MIPSFactory.stackParameter(parameter.offset(), parameter.addressOffset());
+                    if(parameter.passAsReference()) {
+                        if(parameter.isRef()) {
+                            MIPSFactory.stackParameter(parameter.offsetRegister(), parameter.addressOffset());
+                        } else {
+                            MIPSFactory.stackParameter(MIPSFactory.computeRealAddress(parameter.offset(), parameter.isGlobal()), parameter.addressOffset());
+                        }
+
                     } else {
                         for(int i = 0; i <= parameter.arrayUpperBound(); i++) {
                             MIPSFactory.stackArrayCell(parameter.offset(), i, parameter.isGlobal(), parameter.addressOffset());
@@ -315,7 +387,7 @@ public class Ase {
         return undefined;
     }
 
-    public Semantic validateArrayAccessAndLoadCellAndOffset(String id, Semantic index) {
+    /*public Semantic validateArrayAccessAndLoadCellAndOffset(String id, Semantic index) {
 
         Semantic vector = getArray(id);
         if (vector.isUndefined()) {
@@ -346,7 +418,7 @@ public class Ase {
                     vector.arrayUpperBound(), vector.isGlobal()));
         }
         return cell;
-    }
+    }*/ // TODO SAME merge the changes u did here on the func with the same name above
 
     public Funcio addNewFuncio(Funcio var) {
         //System.out.println("FUNCIO: " + var.getNom());
@@ -381,16 +453,16 @@ public class Ase {
             if(argument.isConst() == null ) {
                 switch (argument.typeId()) {
                     case TIPUS_SIMPLE:
-                        if (argument.isVectorIndexNonStatic()) {
-                            MIPSFactory.readInt(argument.reg(), argument.isGlobal());
+                        if (argument.isVectorIndexNonStatic() || argument.isRef()) {
+                            MIPSFactory.readInt(argument.offsetRegister(), argument.isGlobal());
                         } else {
                             MIPSFactory.readInt(argument.offset(), argument.isGlobal());
                         }
                         break;
 
                     case TIPUS_LOGIC:
-                        if (argument.isVectorIndexNonStatic()) {
-                            MIPSFactory.readBool(argument.reg(), argument.isGlobal());
+                        if (argument.isVectorIndexNonStatic() || argument.isRef()) {
+                            MIPSFactory.readBool(argument.offsetRegister(), argument.isGlobal());
                         } else {
                             MIPSFactory.readBool(argument.offset(), argument.isGlobal());
                         }
@@ -398,7 +470,7 @@ public class Ase {
                     default:
                         log("[ERR_SEM_9] "+Alex.getLine()+", El tipus de la expressió en LLEGIR no és tipus simple");
                 }
-            }else{
+            }else {
                 log("[ERR_SEM_25] "+Alex.getLine()+", El tipus de la expressió en LLEGIR es una constant");
             }
         }

@@ -205,32 +205,27 @@ public class Asi {
                 Funcio func = ase.getFuncio(id);
                 LinkedList<Semantic> parameter_values = llistaExp(); //TODO follow this call line and implement ase & mips stuff
                 for(int i = 0 ; i < func.getNumeroParametres() ; i++) {
-                    parameter_values.get(i).isRef(func.obtenirParametre(i).getTipusPasParametre() == TipusPasParametre.REFERENCIA);
+                    parameter_values.get(i).passAsRef(func.obtenirParametre(i).getTipusPasParametre() == TipusPasParametre.REFERENCIA);
                     parameter_values.get(i).setAddressOffset(func.obtenirParametre(i).getDesplacament());
                 }
                 consume(TokenType.PARENTHESIS_CLOSE);
 
-                //TODO write all operations to call the func with _parameters if not_empty
                 if(ase.validateFuncio(parameter_values, func)) {
+                    Semantic return_value = new Semantic();
+                    return_value.setEstatic(false);
+                    return_value.setType(func.getTipus());
                     MIPSFactory.stackContext();
                     ase.stackParameters(parameter_values);
                     MIPSFactory.moveFpToSp();
                     MIPSFactory.moveSp(func.getTamanyFrame());
                     MIPSFactory.jal(func.getEtiqueta());
-
-                    // TODO recover context on function return and obtain return value
-                    // TODO return the return value of the func or where the return value is stored (reg)
+                    MIPSFactory.restoreContext();
+                    return_value.setRegister(MIPSFactory.obtainReturnValue());
+                    return return_value;
                 }
 
                 return ase.undefined(); // return undefined if we couldnt execute the function.
 
-                /*consume(TokenType.PARENTHESIS_OPEN);
-
-               attr.setValue("auxList",new ArrayList<ITipus>());
-                Semantic parameters = llistaExp(attr);
-                ase.validateFuncio(attr);
-                this.attr.removeAttribute("auxList");
-                consume(TokenType.PARENTHESIS_CLOSE);return parameters;*/
             default:
                 return isVector(id, Ase.LOAD);
         }
@@ -268,7 +263,12 @@ public class Asi {
                     }
                 } else {
                     if(!isStore) {
-                        variable.setRegister(MIPSFactory.loadVariable(variable.offset(), variable.isGlobal()));
+                        if(variable.isRef()) {
+                            variable.setRegister(MIPSFactory.loadVariable(variable.offsetRegister(), variable.isGlobal()));
+                        } else {
+                            variable.setRegister(MIPSFactory.loadVariable(variable.offset(), variable.isGlobal()));
+                        }
+
                     }
                 }
 
@@ -306,12 +306,10 @@ public class Asi {
         switch (lat.getType()) {
             case ARGUMENT_SEPARATOR:
                 consume(TokenType.ARGUMENT_SEPARATOR);
-                arguments = llistaExpNonEmpty(arguments);
-                break;
+                return llistaExpNonEmpty(arguments);
             default:
-                break;
+                return arguments;
         }
-        return arguments;
     }
 
     private Semantic factorAux(Semantic accum_exp) throws SyntacticException {
@@ -435,8 +433,8 @@ public class Asi {
         function.setNom(consume(TokenType.IDENTIFIER));
 
         consume(TokenType.PARENTHESIS_OPEN);
-        LinkedList<Parametre> parameters = llistaParam(new LinkedList<>());
         OffsetFactory.reset();
+        LinkedList<Parametre> parameters = llistaParam(new LinkedList<>());
         parameters.forEach(function::inserirParametre);
         consume(TokenType.PARENTHESIS_CLOSE);
         function.setTamanyFrame(ase.computeParametersTotalSize(function));
