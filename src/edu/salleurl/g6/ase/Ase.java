@@ -728,7 +728,6 @@ public class Ase {
     public boolean validateFuncio(LinkedList<Semantic> parameters, Funcio actFunc) {
         boolean status = false;
         if (!parameters.isEmpty() && actFunc != null) {
-
             if (parameters.size() != actFunc.getNumeroParametres()) {
                 if(!(actFunc.getTipus() instanceof TipusIndefinit)) {
                     log("[ERR_SEM_14] " + Alex.getLine() + ", La funció en declaració té " + actFunc.getNumeroParametres() +
@@ -736,6 +735,7 @@ public class Ase {
                 }
                 return false;
             } else {
+                if(parameters.isEmpty() && actFunc.getNumeroParametres() == 0)return true;
                 int i = 0;
                 for (Semantic param : parameters) {
                     status = true;
