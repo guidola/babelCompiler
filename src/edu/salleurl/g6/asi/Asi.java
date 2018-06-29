@@ -456,6 +456,7 @@ public class Asi {
         consume(TokenType.BRACKETS_CLOSE);
 
         consume(TokenType.STATEMENT_SEPARATOR);
+        ase.existReturn(this.attr,this.actFunc);
         ase.deleteActualBlock();
         this.actFunc = null;
 
@@ -619,6 +620,7 @@ public class Asi {
                 break;
             case RETORNAR:
                 consume(TokenType.RETORNAR);
+                this.attr.setValue(TokenType.RETORNAR,true);
                 Semantic exp_return = exp();
                 ase.validateReturn(exp_return, actFunc);
                 if(exp_return.isEstatic()) {

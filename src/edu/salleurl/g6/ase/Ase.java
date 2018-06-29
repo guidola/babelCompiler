@@ -76,7 +76,13 @@ public class Ase {
         return ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id) != null;
     }
 
-
+    public void existReturn(Semantic attr, Funcio func){
+        if(attr.getValue(TokenType.RETORNAR) == null){
+            log( "[ERR_SEM_38] "+Alex.getLine()+", La funció ["+func.getNom()+"] no té instrucció retornar");
+        }else{
+            attr.removeAttribute(TokenType.RETORNAR);
+        }
+    }
     public void addNewVar(Variable var) {
         if (!existConst(var.getNom()) ){
             if(!existVar(var.getNom())){
@@ -390,7 +396,7 @@ public class Ase {
                         }
                         break;
                     default:
-                        log("[ERR_SEM_24] "+Alex.getLine()+", El tipus de la expressió en LLEGIR no és simple o no és logic");
+                        log("[ERR_SEM_9] "+Alex.getLine()+", El tipus de la expressió en LLEGIR no és tipus simple");
                 }
             }else{
                 log("[ERR_SEM_25] "+Alex.getLine()+", El tipus de la expressió en LLEGIR es una constant");
@@ -477,6 +483,8 @@ public class Ase {
             log("[ERR_SEM_8] " + Alex.getLine() + ", L'identificador [" + id + "] no ha estat declarat");
         }else{
             getVar.setValue("IS_FUNC",true);
+            getVar.setValue("VAR_NAME",id);
+
         }
         getVar.setIsVar(false);
         getVar.setEstatic(true);
@@ -638,7 +646,7 @@ public class Ase {
         } else {
             if (!actFunc.getTipus().getNom().equals(exp_result.type().getNom())) {
                 log("[ERR_SEM_17] "+Alex.getLine()+", La funcio [" + actFunc.getNom() + "] ha de ser del tipus [" + actFunc.getTipus().getNom() +
-                        "] però en l'expressió del seu valor el tpus és [" + exp_result.type().getNom() + "]");
+                        "] però en l'expressió del seu valor el tipus és [" + exp_result.type().getNom() + "]");
             }
 
         }
@@ -662,6 +670,10 @@ public class Ase {
                     String type =  param.typeName();
                     System.out.println("Type--> "+type+" nLine--> "+Alex.getLine());
                     String  tipusNom = getTypeName(actFunc.obtenirParametre(i).getTipus());
+                    if(param.getValue("VAR_NAME")==null){
+                        log("[ERR_SEM_16] "+Alex.getLine()+", El paràmetre " + (i+1) + " de la funció no es pot passar per referència");
+                    }
+
                     if(param.isArray() && actFunc.obtenirParametre(i).getTipus() instanceof  TipusArray) {
                         if (param.arrayUpperBound() != (int) ((TipusArray) actFunc.obtenirParametre(i).getTipus()).obtenirDimensio(0).getLimitSuperior()) {
                             log("[ERR_SEM_30] " + Alex.getLine() + ", La mida del vector [" + (param.arrayUpperBound() + 1) +
@@ -720,8 +732,8 @@ public class Ase {
 
     public boolean validateTipusPas(Parametre param, int n_param) {
         if (param.getTipusPasParametre() == TipusPasParametre.REFERENCIA) {
-            if (!(param.getTipus() instanceof TipusCadena) && !(param.getTipus() instanceof TipusArray)) {
-                log("[ERR_SEM_16] "+Alex.getLine()+", El paràmetre " + n_param + " de la funció no es pot passar per referència");
+            if (param.getTipus() instanceof TipusCadena && !(param.getTipus() instanceof TipusSimple)) {
+                log("[ERR_SEM_16] "+Alex.getLine()+", El paràmetre " + (n_param+1) + " de la funció no es pot passar per referència");
                 return false;
             }
         }
@@ -732,6 +744,7 @@ public class Ase {
         Funcio func = (Funcio) ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id);
         if (func == null) {
             func = new Funcio(id, new TipusIndefinit());
+            addNewFuncio(func);
             log("[ERR_SEM_29] "+Alex.getLine()+", Funció no declarada previament");
         }
         return func;
