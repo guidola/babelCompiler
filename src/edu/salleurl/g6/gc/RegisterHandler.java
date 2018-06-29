@@ -1,5 +1,6 @@
 package edu.salleurl.g6.gc;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 public class RegisterHandler {
@@ -18,9 +19,7 @@ public class RegisterHandler {
     public RegisterHandler() {
 
         registers = new LinkedList<>();
-        for (String register : registerPool) {
-            registers.push(register);
-        }
+        registers.addAll(Arrays.asList(registerPool));
     }
 
     public String getRegister() {
