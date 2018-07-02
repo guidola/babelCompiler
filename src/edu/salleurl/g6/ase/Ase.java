@@ -373,7 +373,11 @@ public class Ase {
 
                     } else {
                         for(int i = 0; i <= parameter.arrayUpperBound(); i++) {
-                            MIPSFactory.stackArrayCell(parameter.offset(), i, parameter.isGlobal(), parameter.addressOffset(), parameter.isRef());
+                            if(parameter.isRef()) {
+                                MIPSFactory.stackArrayCell(parameter.offsetRegister(), i, parameter.isGlobal(), parameter.addressOffset(), parameter.isRef());
+                            } else {
+                                MIPSFactory.stackArrayCell(parameter.offset(), i, parameter.isGlobal(), parameter.addressOffset(), parameter.isRef());
+                            }
                         }
                     }
                     break;

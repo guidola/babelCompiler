@@ -1,36 +1,91 @@
-vector [1] de sencer vec;
-sencer i;
-sencer n;
+const MAX = 11;
+vector [11] de sencer vec;
+sencer x;
+sencer  i;
+logic  temp;
 
-funcio a(vector [1] de sencer & vec, sencer  & k) : sencer {
+funcio particio(vector [11] de sencer &vec , sencer  i, sencer j, sencer &s): sencer
+{
+sencer  t;
+sencer mig;
+sencer pivot;
+sencer  temp;
 
-    escriure(vec[k]);
-    vec[k] = vec[k] + 1;
-    si vec[k] < 10  llavors
-        i = a(vec, k);
-    fisi;
 
-    retornar 2;
+	s = i;
+	t = j;
+	mig = (i + j) / 2;
+	pivot = vec[mig];
+	mentre s <= t fer
+
+		mentre  vec[s] < pivot fer
+			s = s + 1;
+		fimentre;
+		mentre  vec[t] > pivot fer
+			t = t - 1;
+		fimentre;
+		si s < t llavors
+			temp = vec[s];
+			vec[s] = vec[t];
+			vec[t] = temp;
+			s = s + 1;
+			t = t - 1;
+		sino
+			si s == t llavors
+				s = s + 1;
+				t = t - 1;
+			fisi;
+		fisi;
+	fimentre;
+	retornar t;
 };
 
-//vector [11] de sencer vec
-funcio b(vector [1] de sencer vec) : sencer {
+funcio quicksorti(vector [11] de sencer &vec, sencer i, sencer j): logic
+{
+    sencer s;sencer t;
 
-    escriure(vec[0]);
-    vec[0] = vec[0] + 1;
-    si vec[0] < 10  llavors
-        retornar b(vec);
-    fisi;
-
-    retornar vec[0];
+	si i < j llavors
+		t = particio(vec, i, j, s);
+		temp = quicksorti(vec, i, t);
+		retornar quicksorti(vec, s, j);
+	fisi;
+	retornar CERT;
 };
 
+funcio quicksort(vector [11] de sencer &vec ): logic
+{
+		retornar quicksorti(vec, 0, MAX-1);
+};
 
 inici
-    n = 0;
-    vec[0] = 1;
-    escriure(vec[0]);
-    i = a(vec, n);
-    escriure(vec[0]);
+	vec[0]=10;
+	vec[1]=9;
+	vec[2]=8;
+	vec[3]=7;
+	vec[4]=6;
+	vec[5]=5;
+	vec[6]=4;
+	i= 7;
+	mentre i <= max - 1 fer
+		escriure("Entra un valor del vector: ");
+		llegir(vec[i]);
+		i = i + 1;
+	fimentre;
+	escriure("Vector original: ");
+	i=0;
+	repetir
+		escriure(vec[i], "-");
+		i = i+1;
+	fins i >10;
+
+	escriure("\n");
+	temp = quicksort(vec);
+	escriure("Vector final:");
+	i=0;
+	mentre i<=10 fer
+		escriure(vec[i], "-");
+		i=i+1;
+	fimentre;
+
 
 fi

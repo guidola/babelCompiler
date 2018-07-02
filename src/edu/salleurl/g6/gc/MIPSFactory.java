@@ -495,7 +495,7 @@ public class MIPSFactory {
     private static void defineErrorRoutine() {
 
         //register string
-        String tag = registerStringInDataArea("[El nucli ha petat] Index out of bounds");
+        String tag = registerStringInDataArea("[ERR_GC_1] Index de vector fora de limits");
 
         // print_str
         out.println(TagGenerator.ERROR_IOB + ": ");
@@ -883,6 +883,10 @@ public class MIPSFactory {
 
     public static void stackArrayCell(int offset, int index, boolean isGlobal, int addr_offset, boolean isRef) {
         storeAtStack(loadArrayCell(offset, index, isGlobal, isRef), addr_offset + index * REGISTER_SIZE);
+    }
+
+    public static void stackArrayCell(String r_offset, int index, boolean isGlobal, int addr_offset, boolean isRef) {
+        storeAtStack(loadArrayCell(r_offset, index, isGlobal, isRef), addr_offset + index * REGISTER_SIZE);
     }
 
     public static void jal(String tag) {
