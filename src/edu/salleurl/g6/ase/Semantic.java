@@ -642,6 +642,8 @@ public class Semantic {
             return this.type().getNom();
         }else if(this.type() instanceof TipusArray){
             return this.type().getNom();
+        }else if(this.isUndefined()) {
+            return Ase.TIPUS_INDEFINIT;
         }
         return "THIS_SHOULD_NEVER_HAPPEN";
     }
