@@ -13,6 +13,7 @@ public class MIPSFactory {
 
     private static final int REGISTER_SIZE = 0x04;
 
+    public static final int REFERENCE_SIZE = REGISTER_SIZE;
     public static final int TIPUS_LOGIC_SIZE = REGISTER_SIZE;
     public static final int TIPUS_SIMPLE_SIZE = REGISTER_SIZE;
 
@@ -517,10 +518,13 @@ public class MIPSFactory {
 
     private static void storeAtStack(String register, int addr_offset) {
         out.println("sw " + register + ", " + (-addr_offset) + "($sp)");
+        registers.returnRegister(register);
+
     }
 
     private static void storeAtStack(String register) {
         out.println("sw " + register + ", ($sp)");
+        registers.returnRegister(register);
     }
 
     private static void stackRegister(String register) {

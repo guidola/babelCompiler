@@ -469,7 +469,12 @@ public class Asi {
                 param.setTipusPasParametre(isRef() ? TipusPasParametre.REFERENCIA : TipusPasParametre.VALOR);
                 //ase.validateTipusPas((String )attr.getValue(TokenType.AMPERSAND), param.getTipus());
                 param.setNom(consume(TokenType.IDENTIFIER));
-                param.setDesplacament(OffsetFactory.nextOffset(param.getTipus().getTamany()));
+                if(param.getTipusPasParametre() == TipusPasParametre.REFERENCIA) {
+                    param.setDesplacament(OffsetFactory.nextOffset(MIPSFactory.REFERENCE_SIZE));
+
+                } else {
+                    param.setDesplacament(OffsetFactory.nextOffset(param.getTipus().getTamany()));
+                }
 
                 ase.addParam(param, parameters);
 
