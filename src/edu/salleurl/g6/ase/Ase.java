@@ -562,7 +562,6 @@ public class Ase {
         }else{
             getVar.setValue("IS_FUNC",true);
             getVar.setValue("VAR_NAME",id);
-            getVar.setType(((Funcio)ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id)).getTipus());
         }
         getVar.setIsVar(false);
         getVar.setEstatic(true);
