@@ -97,6 +97,32 @@ public class MIPSFactory {
         registers.returnRegisters(rSrc, offset_result);
     }
 
+    /** REFERENCE MEMORY OPERATIONS **/
+
+    private static String r_lw(int offset) {
+        String rDest = registers.getRegister();
+        out.println("lw " + rDest + ", " + offset);
+        return rDest;
+    }
+
+    private static String r_lw(String r_offset) {
+        String rDest = registers.getRegister();
+        out.println("lw " + rDest + ", (" + r_offset + ")");
+        registers.returnRegister(r_offset);
+        return rDest;
+    }
+
+    private static void r_sw(String rSrc, int offset) {
+        out.println("sw " + rSrc + ", -" + offset);
+        registers.returnRegister(rSrc);
+    }
+
+    private static void r_sw(String rSrc, String r_offset) {
+
+        out.println("sw " + rSrc + ", (" + r_offset + ")");
+        registers.returnRegisters(rSrc, r_offset);
+    }
+
     /** LOCAL MEMORY OPERATIONS **/
 
     private static String l_lw(int offset) {
@@ -126,32 +152,40 @@ public class MIPSFactory {
 
     /** MEMORY OPERATIONS **/
 
-    private static String lw(int offset, boolean isGlobal) {
-        if(isGlobal){
+    private static String lw(int offset, boolean isGlobal, boolean isRef) {
+        if(isRef) {
+            return r_lw(offset);
+        } else if(isGlobal){
             return g_lw(offset);
         } else {
             return l_lw(offset);
         }
     }
 
-    private static String lw(String r_offset, boolean isGlobal) {
-        if(isGlobal){
+    private static String lw(String r_offset, boolean isGlobal, boolean isRef) {
+        if(isRef) {
+            return r_lw(r_offset);
+        } else if(isGlobal){
             return g_lw(r_offset);
         } else {
             return l_lw(r_offset);
         }
     }
 
-    private static void sw(String rSrc, int offset, boolean isGlobal) {
-        if(isGlobal){
+    private static void sw(String rSrc, int offset, boolean isGlobal, boolean isRef) {
+        if(isRef) {
+            r_sw(rSrc, offset);
+        } else if(isGlobal){
             g_sw(rSrc, offset);
         } else {
             l_sw(rSrc, offset);
         }
     }
 
-    private static void sw(String rSrc, String r_offset, boolean isGlobal) {
-        if(isGlobal){
+    private static void sw(String rSrc, String r_offset, boolean isGlobal, boolean isRef) {
+        if(isRef) {
+            r_sw(rSrc, r_offset);
+        } else if(isGlobal){
             g_sw(rSrc, r_offset);
         } else {
             l_sw(rSrc, r_offset);
@@ -170,32 +204,32 @@ public class MIPSFactory {
 
     }
 
-    private static String duplicate(String r1) {
+    public static String duplicate(String r1) {
         String rDest = registers.getRegister();
         out.println("move " + rDest + ", " + r1);
         return rDest;
     }
 
-    private static Semantic loadVectorCellAndGetOffset(int base_offset, String index_reg, boolean isGlobal) {
+    private static Semantic loadVectorCellAndGetOffset(int base_offset, String index_reg, boolean isGlobal, boolean isRef) {
         Semantic result = new Semantic();
         result.setOffsetRegister(addi(muli(index_reg, REGISTER_SIZE), base_offset));
-        result.setRegister(lw(duplicate(result.offsetRegister()), isGlobal));
+        result.setRegister(lw(duplicate(result.offsetRegister()), isGlobal, isRef));
         return result;
     }
 
-    private static Semantic loadVectorCellAndGetOffset(String r_base_offset, String index_reg, boolean isGlobal) {
+    private static Semantic loadVectorCellAndGetOffset(String r_base_offset, String index_reg, boolean isGlobal, boolean isRef) {
         Semantic result = new Semantic();
         result.setOffsetRegister(add(muli(index_reg, REGISTER_SIZE), r_base_offset));
-        result.setRegister(lw(duplicate(result.offsetRegister()), isGlobal));
+        result.setRegister(lw(duplicate(result.offsetRegister()), isGlobal, isRef));
         return result;
     }
 
-    private static String loadVectorCell(int base_offset, int index, boolean isGlobal) {
-        return lw(index * REGISTER_SIZE + base_offset, isGlobal);
+    private static String loadVectorCell(int base_offset, int index, boolean isGlobal, boolean isRef) {
+        return lw(index * REGISTER_SIZE + base_offset, isGlobal, isRef);
     }
 
-    private static String loadVectorCell(String r_base_offset, int index, boolean isGlobal) {
-        return lw(addi(r_base_offset, index * REGISTER_SIZE) , isGlobal);
+    private static String loadVectorCell(String r_base_offset, int index, boolean isGlobal, boolean isRef) {
+        return lw(addi(r_base_offset, index * REGISTER_SIZE) , isGlobal, isRef);
     }
 
     /** LOAD LITERAL **/
@@ -555,32 +589,32 @@ public class MIPSFactory {
 
     }
 
-    public static String loadVariable(int offset, boolean isGlobal) {
-        return lw(offset, isGlobal);
+    public static String loadVariable(int offset, boolean isGlobal, boolean isRef) {
+        return lw(offset, isGlobal, isRef);
     }
 
-    public static String loadVariable(String r_offset, boolean isGlobal) {
-        return lw(r_offset, isGlobal);
+    public static String loadVariable(String r_offset, boolean isGlobal, boolean isRef) {
+        return lw(duplicate(r_offset), isGlobal, isRef);
     }
 
-    public static String loadArrayCell(int base_offset, int index, boolean isGlobal) {
-        return loadVectorCell(base_offset, index, isGlobal);
+    public static String loadArrayCell(int base_offset, int index, boolean isGlobal, boolean isRef) {
+        return loadVectorCell(base_offset, index, isGlobal, isRef);
     }
 
-    public static String loadArrayCell(String r_base_offset, int index, boolean isGlobal) {
-        return loadVectorCell(r_base_offset, index, isGlobal);
+    public static String loadArrayCell(String r_base_offset, int index, boolean isGlobal, boolean isRef) {
+        return loadVectorCell(r_base_offset, index, isGlobal, isRef);
     }
 
-    public static Semantic validateAndGetOffsetPlusLoadArrayCell(int base_offset, String index_reg, int min_position, int max_position, boolean isGlobal) {
+    public static Semantic validateAndGetOffsetPlusLoadArrayCell(int base_offset, String index_reg, int min_position, int max_position, boolean isGlobal, boolean isRef) {
 
         validateVectorAccess(index_reg, min_position, max_position);
-        return loadVectorCellAndGetOffset(base_offset, index_reg, isGlobal);
+        return loadVectorCellAndGetOffset(base_offset, index_reg, isGlobal, isRef);
     }
 
-    public static Semantic validateAndGetOffsetPlusLoadArrayCell(String r_base_offset, String index_reg, int min_position, int max_position, boolean isGlobal) {
+    public static Semantic validateAndGetOffsetPlusLoadArrayCell(String r_base_offset, String index_reg, int min_position, int max_position, boolean isGlobal, boolean isRef) {
 
         validateVectorAccess(index_reg, min_position, max_position);
-        return loadVectorCellAndGetOffset(r_base_offset, index_reg, isGlobal);
+        return loadVectorCellAndGetOffset(r_base_offset, index_reg, isGlobal, isRef);
     }
 
     public static String defineString(String str) {
@@ -705,20 +739,20 @@ public class MIPSFactory {
         return addi(muli(r_index, REGISTER_SIZE), base_offset);
     }
 
-    public static void performAssignment(String r_offset, boolean isGlobal, int value) {
-        sw(li(value), r_offset, isGlobal);
+    public static void performAssignment(String r_offset, boolean isGlobal, int value, boolean isRef) {
+        sw(li(value), r_offset, isGlobal, isRef);
     }
 
-    public static void performAssignment(String r_offset, boolean isGlobal, String r_value) {
-        sw(r_value, r_offset, isGlobal);
+    public static void performAssignment(String r_offset, boolean isGlobal, String r_value, boolean isRef) {
+        sw(r_value, r_offset, isGlobal, isRef);
     }
 
-    public static void performAssignment(int offset, boolean isGlobal, int value) {
-        sw(li(value), offset, isGlobal);
+    public static void performAssignment(int offset, boolean isGlobal, int value, boolean isRef) {
+        sw(li(value), offset, isGlobal, isRef);
     }
 
-    public static void performAssignment(int offset, boolean isGlobal, String value) {
-        sw(value, offset, isGlobal);
+    public static void performAssignment(int offset, boolean isGlobal, String value, boolean isRef) {
+        sw(value, offset, isGlobal, isRef);
     }
 
     public static void jumpIfTrue(String label, int literal) {
@@ -800,24 +834,24 @@ public class MIPSFactory {
         out.println("syscall");
     }
 
-    public static void readInt(String r_offset, boolean isGlobal) {
+    public static void readInt(String r_offset, boolean isGlobal, boolean isRef) {
         readInput();
-        sw(RegisterHandler.V0, r_offset, isGlobal);
+        sw(RegisterHandler.V0, r_offset, isGlobal, isRef);
     }
 
-    public static void readInt(int offset, boolean isGlobal) {
+    public static void readInt(int offset, boolean isGlobal, boolean isRef) {
         readInput();
-        sw(RegisterHandler.V0, offset, isGlobal);
+        sw(RegisterHandler.V0, offset, isGlobal, isRef);
     }
 
-    public static void readBool(String r_offset, boolean isGlobal) {
+    public static void readBool(String r_offset, boolean isGlobal, boolean isRef) {
         readInput();
-        sw(simpleToLogic(RegisterHandler.V0), r_offset, isGlobal);
+        sw(simpleToLogic(RegisterHandler.V0), r_offset, isGlobal, isRef);
     }
 
-    public static void readBool(int offset, boolean isGlobal) {
+    public static void readBool(int offset, boolean isGlobal, boolean isRef) {
         readInput();
-        sw(simpleToLogic(RegisterHandler.V0), offset, isGlobal);
+        sw(simpleToLogic(RegisterHandler.V0), offset, isGlobal, isRef);
     }
 
     public static void retornar(int literal) {
@@ -847,8 +881,8 @@ public class MIPSFactory {
         storeAtStack(r1, addr_offset);
     }
 
-    public static void stackArrayCell(int offset, int index, boolean isGlobal, int addr_offset) {
-        storeAtStack(loadArrayCell(offset, index, isGlobal), addr_offset);
+    public static void stackArrayCell(int offset, int index, boolean isGlobal, int addr_offset, boolean isRef) {
+        storeAtStack(loadArrayCell(offset, index, isGlobal, isRef), addr_offset + index * REGISTER_SIZE);
     }
 
     public static void jal(String tag) {
@@ -869,7 +903,9 @@ public class MIPSFactory {
     }
 
     public static String deReferenceAddress(int offset) {
-        return lw(offset, false);
+        // can never be a reference to a reference so fixing false to isRef
+        // can never be a reference in global scope since only way to make em is through function calls
+        return lw(offset, false, false);
     }
 
     public static String computeRealAddress(int offset, boolean isGlobal) {
@@ -877,6 +913,10 @@ public class MIPSFactory {
     }
 
     /** SOME HELPERS THAT DO NOT  GENERATE ASSEMBLY CODE **/
+
+    public static void returnRegister(String register) {
+        registers.returnRegister(register);
+    }
 
     public static void returnRegister(Semantic context) {
         if (context.hasRegister()) {

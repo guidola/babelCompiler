@@ -233,7 +233,9 @@ public class Ase {
         cell.setType(vector.arrayType());
         cell.setEstatic(false);
         cell.setGlobal(vector.isGlobal());
-        cell.isRef(false);
+        // although the cell is not a reference since isref denotes that offset is at a register instead of
+        // being a int value, we must set it as ref anyway.
+        cell.isRef(vector.isRef());
 
         //if index is not int then set index to 0 and static
         if (!index.isInt()) {
@@ -299,13 +301,13 @@ public class Ase {
             cell.isVectorIndexNonStatic(false);
             if(vector.isRef()) {
                 cell.setOffsetRegister(validateArrayBounds(vector, index) ?
-                        MIPSFactory.performAdd(vector.offsetRegister(), index.intValue() * vector.arrayType().getTamany()) :
+                        MIPSFactory.performAdd(MIPSFactory.duplicate(vector.offsetRegister()), index.intValue() * vector.arrayType().getTamany()) :
                         vector.reg());
-                cell.setRegister(MIPSFactory.loadArrayCell(vector.offsetRegister(), validateArrayBounds(vector, index) ? index.intValue() : 0, vector.isGlobal()));
+                cell.setRegister(MIPSFactory.loadArrayCell(vector.offsetRegister(), validateArrayBounds(vector, index) ? index.intValue() : 0, vector.isGlobal(), vector.isRef()));
             } else {
                 cell.setOffset(validateArrayBounds(vector, index) ?
                         vector.offset() + index.intValue() * vector.arrayType().getTamany() : vector.offset());
-                cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), validateArrayBounds(vector, index) ? index.intValue() : 0, vector.isGlobal()));
+                cell.setRegister(MIPSFactory.loadArrayCell(vector.offset(), validateArrayBounds(vector, index) ? index.intValue() : 0, vector.isGlobal(), vector.isRef()));
             }
 
 
@@ -313,10 +315,10 @@ public class Ase {
             cell.isVectorIndexNonStatic(true);
             if(vector.isRef()) {
                 cell.merge(MIPSFactory.validateAndGetOffsetPlusLoadArrayCell(vector.offsetRegister(), index.reg(), vector.arrayLowerBound(),
-                        vector.arrayUpperBound(), vector.isGlobal()));
+                        vector.arrayUpperBound(), vector.isGlobal(), vector.isRef()));
             } else {
                 cell.merge(MIPSFactory.validateAndGetOffsetPlusLoadArrayCell(vector.offset(), index.reg(), vector.arrayLowerBound(),
-                        vector.arrayUpperBound(), vector.isGlobal()));
+                        vector.arrayUpperBound(), vector.isGlobal(), vector.isRef()));
             }
 
         }
@@ -371,7 +373,7 @@ public class Ase {
 
                     } else {
                         for(int i = 0; i <= parameter.arrayUpperBound(); i++) {
-                            MIPSFactory.stackArrayCell(parameter.offset(), i, parameter.isGlobal(), parameter.addressOffset());
+                            MIPSFactory.stackArrayCell(parameter.offset(), i, parameter.isGlobal(), parameter.addressOffset(), parameter.isRef());
                         }
                     }
                     break;
@@ -454,17 +456,17 @@ public class Ase {
                 switch (argument.typeId()) {
                     case TIPUS_SIMPLE:
                         if (argument.isVectorIndexNonStatic() || argument.isRef()) {
-                            MIPSFactory.readInt(argument.offsetRegister(), argument.isGlobal());
+                            MIPSFactory.readInt(argument.offsetRegister(), argument.isGlobal(), argument.isRef());
                         } else {
-                            MIPSFactory.readInt(argument.offset(), argument.isGlobal());
+                            MIPSFactory.readInt(argument.offset(), argument.isGlobal(), argument.isRef());
                         }
                         break;
 
                     case TIPUS_LOGIC:
                         if (argument.isVectorIndexNonStatic() || argument.isRef()) {
-                            MIPSFactory.readBool(argument.offsetRegister(), argument.isGlobal());
+                            MIPSFactory.readBool(argument.offsetRegister(), argument.isGlobal(), argument.isRef());
                         } else {
-                            MIPSFactory.readBool(argument.offset(), argument.isGlobal());
+                            MIPSFactory.readBool(argument.offset(), argument.isGlobal(), argument.isRef());
                         }
                         break;
                     default:
@@ -742,8 +744,9 @@ public class Ase {
                     String type =  param.typeName();
                     System.out.println("Type--> "+type+" nLine--> "+Alex.getLine());
                     String  tipusNom = getTypeName(actFunc.obtenirParametre(i).getTipus());
-                    if(param.getValue("VAR_NAME")==null){
+                    if( param.passAsReference() && !param.hasOffset()){
                         log("[ERR_SEM_16] "+Alex.getLine()+", El paràmetre " + (i+1) + " de la funció no es pot passar per referència");
+                        status = false;
                     }
 
                     if(param.isArray() && actFunc.obtenirParametre(i).getTipus() instanceof  TipusArray) {

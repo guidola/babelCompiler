@@ -1,30 +1,36 @@
-CONST separador = "-";
-CONST n = 15;
-
-logic var_1;
-logic var_2;
-logic var_3;
-sencer var_41;
-sencer var_42;
-sencer var_43;
+vector [1] de sencer vec;
 sencer i;
-vector[16] de sencer v;
+sencer n;
 
-funcio suma ( sencer op1, sencer op2 ) : sencer {
+funcio a(vector [1] de sencer & vec, sencer  & k) : sencer {
 
-    retornar op1 + op2;
+    escriure(vec[k]);
+    vec[k] = vec[k] + 1;
+    si vec[k] < 10  llavors
+        i = a(vec, k);
+    fisi;
 
+    retornar 2;
 };
 
-funcio diguesHola() : sencer {
+//vector [11] de sencer vec
+funcio b(vector [1] de sencer vec) : sencer {
 
-    escriure("hola");
+    escriure(vec[0]);
+    vec[0] = vec[0] + 1;
+    si vec[0] < 10  llavors
+        retornar b(vec);
+    fisi;
 
-    retornar 0;
+    retornar vec[0];
 };
 
-Inici
-	//i = suma(2, 3);
-	//escriure(i);
-	i = diguesHola();
-Fi
+
+inici
+    n = 0;
+    vec[0] = 1;
+    escriure(vec[0]);
+    i = a(vec, n);
+    escriure(vec[0]);
+
+fi

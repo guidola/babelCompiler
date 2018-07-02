@@ -513,15 +513,15 @@ public class Semantic {
 
         if(this.isRef() || this.isVectorIndexNonStatic()){
             if(expression.isEstatic()){
-                MIPSFactory.performAssignment(this.offsetRegister(), this.isGlobal(), expression.intValue());
+                MIPSFactory.performAssignment(this.offsetRegister(), this.isGlobal(), expression.intValue(), this.isRef());
             } else {
-                MIPSFactory.performAssignment(this.offsetRegister(), this.isGlobal(), expression.reg());
+                MIPSFactory.performAssignment(this.offsetRegister(), this.isGlobal(), expression.reg(), this.isRef());
             }
         } else {
             if(expression.isEstatic()){
-                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue());
+                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.intValue(), this.isRef());
             } else {
-                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg());
+                MIPSFactory.performAssignment(this.offset(), this.isGlobal(), expression.reg(), this.isRef());
             }
         }
 
@@ -534,6 +534,9 @@ public class Semantic {
     }
 
     public String reg() {
+        if(hasOffsetRegister()) {
+            MIPSFactory.returnRegister((String) attributes.get("OFFSET_REG"));
+        }
         return (String) attributes.get("REG");
     }
 
@@ -549,15 +552,28 @@ public class Semantic {
         return attributes.get("VALUE");
     }
 
+    private boolean hasOffsetRegister() {
+        return attributes.containsKey("OFFSET_REG");
+    }
+
     public int intValue() {
+        if(hasOffsetRegister()) {
+            MIPSFactory.returnRegister((String) attributes.get("OFFSET_REG"));
+        }
         return (int) attributes.get("VALUE");
     }
 
     public String strValue() {
+        if(hasOffsetRegister()) {
+            MIPSFactory.returnRegister((String) attributes.get("OFFSET_REG"));
+        }
         return (String) attributes.get("VALUE");
     }
 
     public int logicValue() {
+        if(hasOffsetRegister()) {
+            MIPSFactory.returnRegister((String) attributes.get("OFFSET_REG"));
+        }
         return attributes.get("VALUE").equals("cert") ? 0xFFFF : 0x0000;
     }
 
@@ -566,6 +582,9 @@ public class Semantic {
     }
 
     public int offset() {
+        if(hasRegister()) {
+            MIPSFactory.returnRegister((String) attributes.get("REG"));
+        }
         return (int) attributes.get("OFFSET");
     }
 
@@ -598,7 +617,8 @@ public class Semantic {
     }
 
     public boolean hasOffset() {
-        return attributes.contains("OFFSET");
+        // either has int offset or offset calculated in register
+        return attributes.containsKey("OFFSET") || attributes.containsKey("OFFSET_REG");
     }
 
     public String typeId() {
@@ -607,7 +627,9 @@ public class Semantic {
             return ((TipusSimple) attributes.get("TIPUS")).getNom();
         } else if (attributes.get("TIPUS") instanceof TipusCadena) {
             return Ase.TIPUS_CADENA;
-        }else if(this.isUndefined()){
+        } else if(attributes.get("TIPUS") instanceof TipusArray) {
+            return Ase.TIPUS_ARRAY;
+        } else if(this.isUndefined()){
             return Ase.TIPUS_INDEFINIT;
         }
         return "THIS_SHOULD_NEVER_HAPPEN";
@@ -671,6 +693,9 @@ public class Semantic {
     }
 
     public String offsetRegister() {
+        if(hasRegister()) {
+            MIPSFactory.returnRegister((String) attributes.get("REG"));
+        }
         return (String) attributes.get("OFFSET_REG");
     }
 

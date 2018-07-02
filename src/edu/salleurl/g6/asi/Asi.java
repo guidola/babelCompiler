@@ -264,9 +264,9 @@ public class Asi {
                 } else {
                     if(!isStore) {
                         if(variable.isRef()) {
-                            variable.setRegister(MIPSFactory.loadVariable(variable.offsetRegister(), variable.isGlobal()));
+                            variable.setRegister(MIPSFactory.loadVariable(variable.offsetRegister(), variable.isGlobal(), variable.isRef()));
                         } else {
-                            variable.setRegister(MIPSFactory.loadVariable(variable.offset(), variable.isGlobal()));
+                            variable.setRegister(MIPSFactory.loadVariable(variable.offset(), variable.isGlobal(), variable.isRef()));
                         }
 
                     }
@@ -621,7 +621,9 @@ public class Asi {
                 this.attr.setValue(TokenType.RETORNAR,true);
                 Semantic exp_return = exp();
                 ase.validateReturn(exp_return, actFunc);
-                if(exp_return.isEstatic()) {
+                if(exp_return.isUndefined()) {
+                    MIPSFactory.retornar(0);
+                } else if(exp_return.isEstatic()) {
                     MIPSFactory.retornar(exp_return.intValue());
                 } else {
                     MIPSFactory.retornar(exp_return.reg());

@@ -23,7 +23,15 @@ public class RegisterHandler {
     }
 
     public String getRegister() {
-        return registers.pop();
+        try{
+            String r = registers.pop();
+            return r;
+        } catch (Exception e) {
+            MIPSFactory.finish();
+            e.printStackTrace();
+            return "";
+        }
+
     }
 
     private boolean isReservedRegister(String register) {
@@ -31,15 +39,15 @@ public class RegisterHandler {
     }
 
     public void returnRegister(String register) {
-        if(isReservedRegister(register)) return;
+        if(isReservedRegister(register) || registers.contains(register)) return;
         registers.push(register);
     }
 
     public void returnRegisters(String r1, String r2) {
-        if(!isReservedRegister(r1)) {
+        if(!isReservedRegister(r1) || registers.contains(r1)) {
             registers.push(r1);
         }
-        if(!isReservedRegister(r2)) {
+        if(!isReservedRegister(r2) || registers.contains(r2)) {
             registers.push(r2);
         }
 
