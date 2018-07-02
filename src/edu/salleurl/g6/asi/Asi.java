@@ -205,6 +205,7 @@ public class Asi {
                 Funcio func = ase.getFuncio(id);
                 LinkedList<Semantic> parameter_values = llistaExp(); //TODO follow this call line and implement ase & mips stuff
                 for(int i = 0 ; i < func.getNumeroParametres() ; i++) {
+                    if(i >= parameter_values.size()) break;
                     parameter_values.get(i).passAsRef(func.obtenirParametre(i).getTipusPasParametre() == TipusPasParametre.REFERENCIA);
                     parameter_values.get(i).setAddressOffset(func.obtenirParametre(i).getDesplacament());
                 }
