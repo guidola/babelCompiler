@@ -368,7 +368,9 @@ public class Asi {
                 left_side_exp.setOpRel(consume(TokenType.RELATIONAL_OPERATOR));
                 Semantic right_side_exp = expSimple();
 
-                if(ase.validateRelationalOp(left_side_exp,right_side_exp))left_side_exp = left_side_exp.performRelationalOperation(right_side_exp);
+                if(ase.validateRelationalOp(left_side_exp,right_side_exp)){
+                    return left_side_exp.performRelationalOperation(right_side_exp);
+                }
                 return left_side_exp;
             default:
                 return left_side_exp;

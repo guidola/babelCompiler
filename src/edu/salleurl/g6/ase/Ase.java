@@ -254,7 +254,7 @@ public class Ase {
             cell.isVectorIndexNonStatic(false);
             if(vector.isRef()){
                 cell.setOffsetRegister(validateArrayBounds(vector, index) ?
-                        MIPSFactory.performAdd(vector.offsetRegister(), index.intValue() * vector.arrayType().getTamany()) :
+                        MIPSFactory.performSub(vector.offsetRegister(), index.intValue() * vector.arrayType().getTamany()) :
                         vector.reg());
             } else {
                 cell.setOffset(validateArrayBounds(vector, index) ?
@@ -301,7 +301,7 @@ public class Ase {
             cell.isVectorIndexNonStatic(false);
             if(vector.isRef()) {
                 cell.setOffsetRegister(validateArrayBounds(vector, index) ?
-                        MIPSFactory.performAdd(MIPSFactory.duplicate(vector.offsetRegister()), index.intValue() * vector.arrayType().getTamany()) :
+                        MIPSFactory.performSub(MIPSFactory.duplicate(vector.offsetRegister()), index.intValue() * vector.arrayType().getTamany()) :
                         vector.reg());
                 cell.setRegister(MIPSFactory.loadArrayCell(vector.offsetRegister(), validateArrayBounds(vector, index) ? index.intValue() : 0, vector.isGlobal(), vector.isRef()));
             } else {
@@ -562,7 +562,7 @@ public class Ase {
         }else{
             getVar.setValue("IS_FUNC",true);
             getVar.setValue("VAR_NAME",id);
-            getVar.setType(((Funcio)ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id)).getTipus());
+
         }
         getVar.setIsVar(false);
         getVar.setEstatic(true);

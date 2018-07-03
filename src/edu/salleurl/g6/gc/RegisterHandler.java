@@ -35,7 +35,7 @@ public class RegisterHandler {
     }
 
     private boolean isReservedRegister(String register) {
-        return register.equals(GP) || register.equals(FP) || register.equals(V0);
+        return register.equals(GP) || register.equals(FP) || register.equals(V0) || register.equals(RA)|| register.equals(ZERO) ;
     }
 
     public void returnRegister(String register) {
@@ -44,11 +44,11 @@ public class RegisterHandler {
     }
 
     public void returnRegisters(String r1, String r2) {
-        if(!isReservedRegister(r1) || registers.contains(r1)) {
-            registers.push(r1);
-        }
         if(!isReservedRegister(r2) || registers.contains(r2)) {
             registers.push(r2);
+        }
+        if(!isReservedRegister(r1) || registers.contains(r1)) {
+            registers.push(r1);
         }
 
     }

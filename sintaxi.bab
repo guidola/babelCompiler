@@ -1,91 +1,51 @@
-const MAX = 11;
-vector [11] de sencer vec;
-sencer x;
-sencer  i;
-logic  temp;
+CONST separador = "-";
+CONST n = 15;
 
-funcio particio(vector [11] de sencer &vec , sencer  i, sencer j, sencer &s): sencer
-{
-sencer  t;
-sencer mig;
-sencer pivot;
-sencer  temp;
+logic var_1;
+logic var_2;
+logic var_3;
+sencer var_41;
+sencer var_42;
+sencer var_43;
+sencer i;
+vector[16] de sencer v;
 
 
-	s = i;
-	t = j;
-	mig = (i + j) / 2;
-	pivot = vec[mig];
-	mentre s <= t fer
-
-		mentre  vec[s] < pivot fer
-			s = s + 1;
-		fimentre;
-		mentre  vec[t] > pivot fer
-			t = t - 1;
-		fimentre;
-		si s < t llavors
-			temp = vec[s];
-			vec[s] = vec[t];
-			vec[t] = temp;
-			s = s + 1;
-			t = t - 1;
-		sino
-			si s == t llavors
-				s = s + 1;
-				t = t - 1;
-			fisi;
-		fisi;
-	fimentre;
-	retornar t;
-};
-
-funcio quicksorti(vector [11] de sencer &vec, sencer i, sencer j): logic
-{
-    sencer s;sencer t;
-
-	si i < j llavors
-		t = particio(vec, i, j, s);
-		temp = quicksorti(vec, i, t);
-		retornar quicksorti(vec, s, j);
-	fisi;
-	retornar CERT;
-};
-
-funcio quicksort(vector [11] de sencer &vec ): logic
-{
-		retornar quicksorti(vec, 0, MAX-1);
-};
-
-inici
-	vec[0]=10;
-	vec[1]=9;
-	vec[2]=8;
-	vec[3]=7;
-	vec[4]=6;
-	vec[5]=5;
-	vec[6]=4;
-	i= 7;
-	mentre i <= max - 1 fer
-		escriure("Entra un valor del vector: ");
-		llegir(vec[i]);
-		i = i + 1;
-	fimentre;
-	escriure("Vector original: ");
+Inici
+	escriure ("introduce el entero -1:");
+	llegir(var_41);
+	escriure ("introduce el entero 2:");
+	llegir(var_42);
+	escriure ("introduce el entero 3:");
+	llegir(var_43);
+	var_41 = var_41 - var_42 - var_43;
+	escriure("el resultado debe ser -6 y es: ",var_41);
+	escriure ("introduce el entero 2:");
+	llegir(var_41);
+	escriure ("introduce el entero 10:");
+	llegir(var_42);
+	escriure ("introduce el entero 4:");
+	llegir(var_43);
+	var_41 = var_41 * var_42 / var_43;
+	escriure("el resultado debe ser 5 y es: ",var_41);
+	escriure ("introduce el valor logic cert:");
+	llegir(var_2);
+	escriure ("introduce el valor logic fals:");
+	llegir(var_3);
+	var_1 = ( var_41 > var_42) or ((cert and var_3) and (not var_2));
+	escriure("el resultado debe ser falso y es: ", var_1);
+	v[10] = 0;
+	v[11] = 1;
+	v[12] = 2;
+	v[13] = 3;
+	v[14] = 4;
+	v[15] = 5;
+	var_41 = 9;
 	i=0;
-	repetir
-		escriure(vec[i], "-");
-		i = i+1;
-	fins i >10;
-
-	escriure("\n");
-	temp = quicksort(vec);
-	escriure("Vector final:");
-	i=0;
-	mentre i<=10 fer
-		escriure(vec[i], "-");
+     	mentre i<= n fer
+		escriure(V[i]);
 		i=i+1;
 	fimentre;
+	v[var_41 + 10] = 20;
 
-
-fi
+Fi

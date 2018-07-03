@@ -220,7 +220,7 @@ public class MIPSFactory {
 
     private static Semantic loadVectorCellAndGetOffset(String r_base_offset, String index_reg, boolean isGlobal, boolean isRef) {
         Semantic result = new Semantic();
-        result.setOffsetRegister(add(muli(index_reg, REGISTER_SIZE), r_base_offset));
+        result.setOffsetRegister(sub(r_base_offset, muli(index_reg, REGISTER_SIZE)));
         result.setRegister(lw(duplicate(result.offsetRegister()), isGlobal, isRef));
         return result;
     }
@@ -524,7 +524,6 @@ public class MIPSFactory {
 
     private static void storeAtStack(String register) {
         out.println("sw " + register + ", ($sp)");
-        registers.returnRegister(register);
     }
 
     private static void stackRegister(String register) {
@@ -642,7 +641,7 @@ public class MIPSFactory {
     }
 
     public static String performSub(int literal, String r1){
-        return subi(r1, literal);
+        return sub(li(literal), r1);
     }
 
     public static String performSub(String r1, String r2){
@@ -735,7 +734,7 @@ public class MIPSFactory {
 
     public static String validateAndGetArrayCellOffset(String r_base_offset, String r_index, int min_position, int max_position) {
         validateVectorAccess(r_index, min_position, max_position);
-        return add(muli(r_index, REGISTER_SIZE), r_base_offset);
+        return sub(r_base_offset, muli(r_index, REGISTER_SIZE));
     }
 
     public static String validateAndGetArrayCellOffset(int base_offset, String r_index, int min_position, int max_position) {
