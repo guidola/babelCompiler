@@ -75,7 +75,9 @@ public class Ase {
     public Boolean existFuncio(String id) {
         return ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id) != null;
     }
-
+    public Boolean existFuncioBlocActual(String id) {
+        return ts.obtenirBloc(ts.getBlocActual()).obtenirProcediment(id) != null;
+    }
     public void existReturn(Semantic attr, Funcio func){
         if(attr.getValue(TokenType.RETORNAR) == null){
             log( "[ERR_SEM_38] "+Alex.getLine()+", La funció ["+func.getNom()+"] no té instrucció retornar");
@@ -86,10 +88,10 @@ public class Ase {
     public void addNewVar(Variable var) {
         if (!existConst(var.getNom()) ){
             if(!existVar(var.getNom())){
-                //if(!existFuncio(var.getNom())){
+                if(!existFuncioBlocActual(var.getNom())){
                     ts.obtenirBloc(ts.getBlocActual()).inserirVariable(var);
-                //}else
-                  //  log("[ERR_SEM_X] "+Alex.getLine()+", Identificador [" + var.getNom() + "] utilitzat previament per una funcio");
+                }else
+                    log("[ERR_SEM_24] "+Alex.getLine()+", Identificador [" + var.getNom() + "] utilitzat previament per una funcio");
             }else
                 log("[ERR_SEM_2] "+Alex.getLine()+ ", Variable [" + var.getNom() + "] doblement definida");
         } else
@@ -427,24 +429,30 @@ public class Ase {
     }*/ // TODO SAME merge the changes u did here on the func with the same name above
 
     public Funcio addNewFuncio(Funcio var) {
-        //System.out.println("FUNCIO: " + var.getNom());
-
-        if (!existFuncio(var.getNom())) {
-            if (!existGlobalVar(var.getNom()) && !existGlobalConst(var.getNom())) {
+        if(existFuncio(var.getNom())){
+            if(((Funcio)ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(var.getNom())).getTipus() instanceof  TipusIndefinit){
                 ts.obtenirBloc(CONTEXT_GLOBAL).inserirProcediment(var);
-                ts.obtenirBloc(ts.getBlocActual()).inserirProcediment(var);
-                return var;
+            }else{
+                log("[ERR_SEM_3] " + Alex.getLine() + ", Funció doblement definida");
+            }
+        }else {
+
+            if (!existGlobalVar(var.getNom()) && !existGlobalConst(var.getNom())) {
+                if (!existFuncio(var.getNom())) {//|| (existFuncio(var.getNom()) &&  ) {
+                    ts.obtenirBloc(CONTEXT_GLOBAL).inserirProcediment(var);
+                    ts.obtenirBloc(ts.getBlocActual()).inserirProcediment(var);
+                    return var;
+                } else
+                    log("[ERR_SEM_3] " + Alex.getLine() + ", Funció doblement definida");
+
             } else
-                log("[ERR_SEM_23] "+Alex.getLine()+", Identificador utilitzat previament per una variable o constant");
-
-        } else
-            log("[ERR_SEM_3] "+Alex.getLine()+", Funció doblement definida");
-
-        int i = 0;
+                log("[ERR_SEM_23] " + Alex.getLine() + ", Identificador utilitzat previament per una variable o constant");
+        }
+       /* int i = 0;
         while (existFuncio(var.getNom() + "_" + i) && existVar(var.getNom() + "_" + i)
                 && existConst(var.getNom() + "_" + i))
             i++;
-        var.setNom(var.getNom() + "_" + i);
+        var.setNom(var.getNom() + "_" + i);*/
         return var;
     }
 
@@ -562,7 +570,7 @@ public class Ase {
         }else{
             getVar.setValue("IS_FUNC",true);
             getVar.setValue("VAR_NAME",id);
-
+            //getVar.setType(((Funcio)ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id)).getTipus());
         }
         getVar.setIsVar(false);
         getVar.setEstatic(true);
@@ -746,7 +754,7 @@ public class Ase {
                 for (Semantic param : parameters) {
                     status = true;
                     String type =  param.typeName();
-                    System.out.println("Type--> "+type+" nLine--> "+Alex.getLine());
+                    //System.out.println("Type--> "+type+" nLine--> "+Alex.getLine());
                     String  tipusNom = getTypeName(actFunc.obtenirParametre(i).getTipus());
                     if( param.passAsReference() && !param.hasOffset()){
                         log("[ERR_SEM_16] "+Alex.getLine()+", El paràmetre " + (i+1) + " de la funció no es pot passar per referència");
@@ -766,15 +774,16 @@ public class Ase {
                             tipusNom = ((TipusArray) actFunc.obtenirParametre(i).getTipus()).getTipusElements().getNom();
                             if (!type.equals(tipusNom)) {
                                 log("[ERR_SEM_15] " + Alex.getLine() + ", El tipus de paràmetre " + (i + 1) +
-                                        " de la funció no coincideix amb el tipus en la seva declaració " + tipusNom);
+                                        " de la funció ["+actFunc.getNom()+"] no coincideix amb el tipus en la seva declaració [" + tipusNom+"]");
                                 status = false;
                             }
                         //}
                     }else{
                         if(!param.isArray() || !(actFunc.obtenirParametre(i).getTipus() instanceof  TipusArray)){
+                            //System.out.println(param);
                             if(!type.equals(tipusNom)){
-                                log("[ERR_SEM_15] "+Alex.getLine()+", El tipus de paràmetre " + (i+1) +
-                                        " de la funció no coincideix amb el tipus en la seva declaració "+ actFunc.obtenirParametre(i).getTipus().getNom());
+                                log("[ERR_SEM_15] " + Alex.getLine() + ", El tipus de paràmetre " + (i + 1) +
+                                        " de la funció ["+ actFunc.getNom()+"] no coincideix amb el tipus en la seva declaració [" + tipusNom+"]");
                                 status = false;
                             }
                         }
@@ -823,7 +832,7 @@ public class Ase {
         Funcio func = (Funcio) ts.obtenirBloc(CONTEXT_GLOBAL).obtenirProcediment(id);
         if (func == null) {
             func = new Funcio(id, new TipusIndefinit());
-            addNewFuncio(func);
+            func = addNewFuncio(func);
             log("[ERR_SEM_29] "+Alex.getLine()+", Funció no declarada previament");
         }
         return func;
@@ -837,6 +846,8 @@ public class Ase {
             return tipus.getNom();
         }else if(tipus instanceof TipusArray){
             return tipus.getNom();
+        }else if(tipus instanceof  TipusIndefinit){
+            return TIPUS_INDEFINIT;
         }
         return "THIS_SHOULD_NEVER_HAPPEN";
     }
